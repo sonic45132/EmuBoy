@@ -1,0 +1,7 @@
+*.txt
+*.log
+*.list
+bin/[0-9a-zA-Z]*
+*~
+*.bin
+*.gb
