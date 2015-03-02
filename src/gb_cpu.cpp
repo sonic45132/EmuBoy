@@ -34,12 +34,28 @@ void Gameboy::setDE(unsigned short value) {
 	d = (value&0xFF00)>>8;
 }
 
-void Gameboy::SZF() {
+inline void Gameboy::SZF() {
 	f |= 0x80;
 }
 
-void Gameboy::CZF() {
+inline void Gameboy::CZF() {
 	f &= 0x70;
+}
+
+inline void Gameboy::SOF() {
+	f |= 0x40;
+}
+
+inline void Gameboy::COF() {
+	f &= 0xB0;
+}
+
+inline void Gameboy::SHF() {
+	f |= 0x20;
+}
+
+inline void Gameboy::CHF() {
+	f &= 0xD0;
 }
 
 void Gameboy::NOP() {
@@ -59,6 +75,11 @@ void Gameboy::SCF() {
 }
 
 void Gameboy::CCF() {
+	f &= 0x90;
+	f ^= (1 << 4);
+}
+
+inline void Gameboy::ZCF() {
 	f &= 0xE0;
 }
 
@@ -251,11 +272,13 @@ void Gameboy::LDrr_sp_hl() {
 }
 
 void Gameboy::LDHLrr_hl_sp() {
-	char temp = readByte(sp);
+	char temp = readByte(pc++);
+	short temp2 = sp;
+	f &= 0x30;
 	short hl = ((short)sp + temp);
 	setHL(hl);
-	pc++;
-	f &= 0x30;
+	(temp2 > hl) ? SCF() : ZCF();
+	((temp2&0x00FF) > (hl&0x00FF)) ? SHF() : CHF();
 }
 
 void Gameboy::LDrn_a() {
@@ -413,15 +436,13 @@ void Gameboy::LDmr_de_a() {
 }
 
 void Gameboy::LDmr_w_a() {
-	unsigned short temp = readWord(pc);
+	writeByte(a, readWord(pc));
 	pc+=2;
-	writeByte(a, temp);
 }
 
 void Gameboy::LDmr_w_sp() {
-	unsigned short temp = readWord(pc);
+	writeWord(sp, readWord(pc));
 	pc+=2;
-	writeWord(sp, temp);
 }
 
 void Gameboy::LDmn_hl_n() {
@@ -451,59 +472,59 @@ void Gameboy::LDHmr_c_a() {
 }
 
 void Gameboy::INCr_a() {
+	unsigned char temp = a;
 	a += 1;
-	f &= 0xB0;
-	if(a == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(a == 0) ? SZF() : CZF();
+	((a&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_b() {
+	unsigned char temp = b;
 	b += 1;
-	f &= 0xB0;
-	if(b == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(b == 0) ? SZF() : CZF();
+	((b&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_c() {
+	unsigned char temp = c;
 	c += 1;
-	f &= 0xB0;
-	if(c == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(c == 0) ? SZF() : CZF();
+	((c&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_d() {
+	unsigned char temp = d;
 	d += 1;
-	f &= 0xB0;
-	if(d == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(d == 0) ? SZF() : CZF();
+	((d&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_e() {
+	unsigned char temp = e;
 	e += 1;
-	f &= 0xB0;
-	if(e == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(e == 0) ? SZF() : CZF();
+	((e&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_h() {
+	unsigned char temp = h;
 	h += 1;
-	f &= 0xB0;
-	if(h == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(h == 0) ? SZF() : CZF();
+	((h&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_l() {
+	unsigned char temp = l;
 	l += 1;
-	f &= 0xB0;
-	if(l == 0) {
-		f |= 0x80;
-	}
+	COF();
+	(l == 0) ? SZF() : CZF();
+	((l&0x5) < (temp&0xf)) ? SHF() : CHF();
 }
 
 void Gameboy::INCr_bc() {
@@ -528,14 +549,11 @@ void Gameboy::INCr_sp() {
 
 void Gameboy::INCm_hl() {
 	unsigned char temp = readByte(getHL());
+	unsigned char temp2 = temp;
 	temp += 1;
-	f &= 0xB0;
-	if(temp == 0) {
-		f |= 0x80;
-	}
-	else {
-		CZF();
-	}
+	COF();
+	(temp == 0) ? SZF() : CZF();
+	((temp&0x5) < (temp2&0xf)) ? SHF() : CHF();
 	writeByte(temp, getHL());
 }
 
@@ -543,7 +561,7 @@ void Gameboy::DECr_a() {
 	a -= 1;
 	f |= 0x40;
 	if(a == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -554,7 +572,7 @@ void Gameboy::DECr_b() {
 	b -= 1;
 	f |= 0x40;
 	if(b == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -565,7 +583,7 @@ void Gameboy::DECr_c() {
 	c -= 1;
 	f |= 0x40;
 	if(c == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -576,7 +594,7 @@ void Gameboy::DECr_d() {
 	d -= 1;
 	f |= 0x40;
 	if(d == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -587,7 +605,7 @@ void Gameboy::DECr_e() {
 	e -= 1;
 	f |= 0x40;
 	if(e == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -598,7 +616,7 @@ void Gameboy::DECr_h() {
 	h -= 1;
 	f |= 0x40;
 	if(h == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -609,7 +627,7 @@ void Gameboy::DECr_l() {
 	l -= 1;
 	f |= 0x40;
 	if(l == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -646,7 +664,7 @@ void Gameboy::DECm_hl() {
 	writeByte(temp, getHL());
 	f |= 0x40;
 	if(temp == 0) {
-		f |= 0x80;
+		SZF();
 	}
 	else {
 		CZF();
@@ -657,63 +675,63 @@ void Gameboy::ADDrr_a_a(){
 	unsigned char temp = a;
 	a += a;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_b(){ 
 	unsigned char temp = a;
 	a += b;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_c(){ 
 	unsigned char temp = a;
 	a += c;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_d(){ 
 	unsigned char temp = a;
 	a += d;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_e(){ 
 	unsigned char temp = a;
 	a += e;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_h(){ 
 	unsigned char temp = a;
 	a += h;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_a_l(){ 
 	unsigned char temp = a;
 	a += l;
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrr_hl_bc() {
@@ -722,8 +740,8 @@ void Gameboy::ADDrr_hl_bc() {
 	temp |= (b << 8);
 	setHL((getHL()+ temp));
 	f &= 0xB0;
-	if(a < prev) { f |= 0x10; }
-	if((getHL()&0x3) < (prev&0x3)) { f |= 0x20; }
+	if(a < prev) { SCF(); }
+	if((getHL()&0x3) < (prev&0x3)) { SHF(); }
 }
 
 void Gameboy::ADDrr_hl_de() {
@@ -732,461 +750,462 @@ void Gameboy::ADDrr_hl_de() {
 	temp |= (d << 8);
 	setHL((getHL()+ temp));
 	f &= 0xB0;
-	if(a < prev) { f |= 0x10; }
-	if((getHL()&0x3) < (prev&0x3)) { f |= 0x20; }
+	if(a < prev) { SCF(); }
+	if((getHL()&0x3) < (prev&0x3)) { SHF(); }
 }
 
 void Gameboy::ADDrr_hl_hl() {
 	unsigned short prev = getHL();
 	setHL((getHL()*2));
 	f &= 0xB0;
-	if(a < prev) { f |= 0x10; }
-	if((getHL()&0x3) < (prev&0x3)) { f |= 0x20; }
+	if(a < prev) { SCF(); }
+	if((getHL()&0x3) < (prev&0x3)) { SHF(); }
 }
 
 void Gameboy::ADDrr_hl_sp() {
 	unsigned short prev = getHL();
 	setHL(getHL()+sp);
 	f &= 0xB0;
-	if(a < prev) { f |= 0x10; }
-	if((getHL()&0x3) < (prev&0x3)) { f |= 0x20; }
+	if(a < prev) { SCF(); }
+	if((getHL()&0x3) < (prev&0x3)) { SHF(); }
 }
 
 void Gameboy::ADDrn_a() {
 	unsigned char temp = a;
 	a += readByte(pc++);
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADDrn_sp() {
 	unsigned short prev = sp;
 	sp += readByte(pc++);
 	f &= 0xC0;
-	if(a < prev) { f |= 0x10; }
-	if((sp&0x3) < (prev&0x3)) { f |= 0x20; }
+	if(a < prev) { SCF(); }
+	if((sp&0x3) < (prev&0x3)) { SHF(); }
 }
 
 void Gameboy::ADDrm_a_hl() {
 	unsigned char temp = a;
 	a += readByte(getHL());
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_a() {
 	unsigned char temp = a;
 	a += (a + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_b() {
 	unsigned char temp = a;
 	a += (b + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_c() {
 	unsigned char temp = a;
 	a += (c + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_d() {
 	unsigned char temp = a;
 	a += (d + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_e() {
 	unsigned char temp = a;
 	a += (e + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_h() {
 	unsigned char temp = a;
 	a += (h + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrr_a_l() {
 	unsigned char temp = a;
 	a += (l + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrm_a_hl() {
 	unsigned char temp = a;
 	a += (readByte(getHL()) + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ADCrn_a() {
 	unsigned char temp = a;
 	a += (readByte(pc++) + ((f&0x10)>>4));
 	f &= 0xB0;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_a() {
 	unsigned char temp = a;
 	a -= a;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_b() {
 	unsigned char temp = a;
 	a -= b;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_c() {
 	unsigned char temp = a;
 	a -= c;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_d() {
 	unsigned char temp = a;
 	a -= d;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_e() {
 	unsigned char temp = a;
 	a -= e;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_h() {
 	unsigned char temp = a;
 	a -= h;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrr_a_l() {
 	unsigned char temp = a;
 	a -= l;
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrn_a() {
 	unsigned char temp = a;
 	a -= readByte(pc++);
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SUBrm_a_hl() {
 	unsigned char temp = a;
 	a -= readByte(getHL());
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_a() {
 	unsigned char temp = a;
 	a -= (a + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_c() {
 	unsigned char temp = a;
 	a -= (c + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_b() {
 	unsigned char temp = a;
 	a -= (b + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_d() {
 	unsigned char temp = a;
 	a -= (d + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_e() {
 	unsigned char temp = a;
 	a -= (e + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_h() {
 	unsigned char temp = a;
 	a -= (h + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrr_a_l() {
 	unsigned char temp = a;
 	a -= (l + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrm_a_hl() {
 	unsigned char temp = a;
 	a -= (readByte(getHL()) + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::SBCrn_a() {
 	unsigned char temp = a;
 	a -= (readByte(pc++) + ((f&0x10)>>4));
 	f |= 0x40;
-	if(a < temp) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((a&0x3) < (temp&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a < temp) { SCF(); } else { ZCF(); }
+	if((a&0x5) < (temp&0x5)) { SHF(); } else { CHF(); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 //Logical Operations
 void Gameboy::ANDrr_a_a() {
 	a &= a;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_b() {
 	a &= b;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_c() {
 	a &= c;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_d() {
 	a &= d;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_e() {
 	a &= e;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_h() {
 	a &= h;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrr_a_l() {
 	a &= l;
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrn_a() {
 	a &= readByte(pc++);
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ANDrm_a_hl() {
 	a &= readByte(getHL());
-	f |= 0x20;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	SHF();
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_a() {
 	a |= a;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_b() {
 	a |= b;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_c() {
 	a |= c;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_d() {
 	a |= d;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_e() {
 	a |= e;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_h() {
 	a |= h;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrr_a_l() {
 	a |= l;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrn_a() {
 	a |= readByte(pc++);
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::ORrm_a_hl() {
 	a |= readByte(getHL());
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_a() {
 	a ^= a;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_b() {
 	a ^= b;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_c() {
 	a ^= c;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_d() {
 	a ^= d;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_e() {
 	a ^= e;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_h() {
 	a ^= h;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrr_a_l() {
 	a ^= l;
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrn_a() {
 	a ^= readByte(pc++);
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::XORrm_a_hl() {
 	a ^= readByte(getHL());
 	f &= 0x80;
-	if(a == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(a == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPL() {
 	a = ~a;
-	f |= 0x60;
+	SHF();
+	SOF();
 }
 
 //Comparison
@@ -1195,9 +1214,9 @@ void Gameboy::CPrr_a_a() {
 	unsigned char temp = a;
 	temp -= a;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_b() {
@@ -1205,9 +1224,9 @@ void Gameboy::CPrr_a_b() {
 	unsigned char temp = a;
 	temp -= b;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_c() {
@@ -1215,9 +1234,9 @@ void Gameboy::CPrr_a_c() {
 	unsigned char temp = a;
 	temp -= c;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_d() {
@@ -1225,9 +1244,9 @@ void Gameboy::CPrr_a_d() {
 	unsigned char temp = a;
 	temp -= d;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_e() {
@@ -1235,9 +1254,9 @@ void Gameboy::CPrr_a_e() {
 	unsigned char temp = a;
 	temp -= e;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_h() {
@@ -1245,9 +1264,9 @@ void Gameboy::CPrr_a_h() {
 	unsigned char temp = a;
 	temp -= h;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrr_a_l() {
@@ -1255,9 +1274,9 @@ void Gameboy::CPrr_a_l() {
 	unsigned char temp = a;
 	temp -= l;
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrn_a() {
@@ -1265,9 +1284,9 @@ void Gameboy::CPrn_a() {
 	unsigned char temp = a;
 	temp -= readByte(pc++);
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 void Gameboy::CPrm_a_hl() {
@@ -1275,9 +1294,9 @@ void Gameboy::CPrm_a_hl() {
 	unsigned char temp = a;
 	temp -= readByte(getHL());
 	f |= 0x40;
-	if(temp < prev) { f |= 0x10; } else { f &= ~(0x1F); }
-	if((temp&0x3) < (prev&0x3)) { f |= 0x20; } else { f &= ~(0x2F); }
-	if(temp == 0) { f |= 0x80; } else { f &= ~(0x8F); }
+	if(temp < prev) { SCF(); } else { ZCF(); }
+	if((temp&0x5) < (prev&0x3)) { SHF(); } else { CHF(); }
+	if(temp == 0) { SZF(); } else { CZF(); }
 }
 
 //Stack operations
@@ -1636,7 +1655,7 @@ void Gameboy::RL() {
 		SCF();
 	}
 	else {
-		CCF();
+		ZCF();
 	}
 
 	if(reg == NULL) {
@@ -1671,7 +1690,7 @@ void Gameboy::RLC() {
 		SCF();
 	}
 	else {
-		CCF();
+		ZCF();
 	}
 
 	temp = temp2;
@@ -1708,7 +1727,7 @@ void Gameboy::RR() {
 	else {
 		temp = temp >> 1;
 		temp |= ((f&0x10)<<3);
-		CCF();
+		ZCF();
 	}
 
 	if(reg == NULL) {
@@ -1738,7 +1757,7 @@ void Gameboy::RRC() {
 		SCF();
 	}
 	else {
-		CCF();
+		ZCF();
 	}
 
 	temp = temp >> 1;
@@ -1768,13 +1787,11 @@ void Gameboy::SLA() {
 		temp = *this.*reg;
 	}
 
-	if(temp & 0x80 > 0) {
-		SCF();
-	} 
-	else {
-		CCF();
-	}
+	(temp & 0x80 > 0) ? SCF() : ZCF();
+
 	temp = temp << 1;
+
+	(temp == 0) ? SZF() : CZF();
 
 	if(reg == NULL) {
 		writeByte(temp, getHL());
@@ -1800,13 +1817,11 @@ void Gameboy::SRA() {
 		temp = (char)(*this.*reg);
 	}
 
-	if(temp & 0x01 > 0) {
-		SCF();
-	} 
-	else {
-		CCF();
-	}
+	(temp & 0x01 > 0) ? SCF() : ZCF();
+
 	temp = temp >> 1;
+
+	(temp == 0) ? SZF() : CZF();
 
 	if(reg == NULL) {
 		writeByte((unsigned char)temp, getHL());
@@ -1832,13 +1847,12 @@ void Gameboy::SRL() {
 		temp = *this.*reg;
 	}
 
-	if(temp & 0x01 > 0) {
-		SCF();
-	} 
-	else {
-		CCF();
-	}
+	(temp & 0x01 > 0) ? SCF() : ZCF();
+
 	temp = temp >> 1;
+	temp &= ~(0x80);
+
+	(temp == 0) ? SZF() : CZF();
 
 	if(reg == NULL) {
 		writeByte(temp, getHL());
@@ -1902,8 +1916,8 @@ void Gameboy::SWAPm_hl() {
 
 void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 	unsigned char temp;
-	f &= 0xA0;
-	f |= 0x20;
+	COF();
+	SHF();
 	switch(loc) {
 		case 0:
 			temp = (b & (1 << bNum)) >> bNum;
@@ -1917,7 +1931,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 1:
 			temp = (c & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1926,7 +1940,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 2:
 			temp = (d & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1935,7 +1949,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 3:
 			temp = (e & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1944,7 +1958,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 4:
 			temp = (h & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1953,7 +1967,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 5:
 			temp = (l & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1962,7 +1976,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 6:
 			temp = (readByte(getHL()) & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();
@@ -1971,7 +1985,7 @@ void Gameboy::BIT(unsigned char bNum, unsigned char loc) {
 		case 7:
 			temp = (a & (1 << bNum)) >> bNum;
 			if(temp == 0) {
-				f |= 0x80;
+				SZF();
 			}
 			else {
 				CZF();

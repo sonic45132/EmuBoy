@@ -73,8 +73,19 @@ private:
 	unsigned short getDE();
 	void setBC(unsigned short value);
 	void setDE(unsigned short value);
+	
+	//Flag operations
 	void SZF();
 	void CZF();
+	void SOF();
+	void COF();
+	void SHF();
+	void CHF();
+	void SCF();
+	//Instruction to toggle carry flag
+	void CCF();
+	//Zeros carry flag
+	void ZCF();
 
 	void EXT();
 
@@ -85,8 +96,6 @@ private:
 	void NOP();
 	void STOP();
 	void HALT();
-	void SCF();
-	void CCF();
 	void DAA();
 	void DI();
 	void EI();
