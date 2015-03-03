@@ -1,16 +1,17 @@
 #include "gb.h"
+#include "texture.h"
 #include <SDL.h>
 #include <SDL_image.h>
 #include <chrono>
 #include <iostream>
 
 const int SCREEN_WIDTH = 640;
-const int SCREEN_HEIGHT = 480;
+const int SCREEN_HEIGHT = 576;
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
-SDL_Surface* gScreenSurface = NULL;
-SDL_Surface* gHelloWorld = NULL;
+Texture* gTexture = NULL;
+
 
 Gameboy gb;
 
@@ -51,9 +52,12 @@ bool init() {
 			else
 			{
 				//Initialize renderer color
+				gTexture = new Texture(gRenderer);
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 				SDL_RenderPresent( gRenderer );
+
+				SDL_Delay(500);
 
 				//Initialize PNG loading
 				int imgFlags = IMG_INIT_PNG;
@@ -79,6 +83,7 @@ void close() {
 	SDL_DestroyWindow( gWindow );
 	gWindow = NULL;
 	gRenderer = NULL;
+	delete gTexture;
 
 	IMG_Quit();
 	SDL_Quit();

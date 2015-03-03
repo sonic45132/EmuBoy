@@ -1634,16 +1634,12 @@ void Gameboy::RL() {
 	unsigned char temp;
 	unsigned short temp2;
 
-	printf("regNum: %d\n", regNum);
-
 	if(reg == NULL) {
 		temp = readByte(getHL());
 	}
 	else {
 		temp = *this.*reg;
 	}
-
-	printf("reg value: %02X\n", temp);
 
 	temp2 = temp;
 	temp2 = temp2 << 1;

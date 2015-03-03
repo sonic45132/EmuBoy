@@ -28,6 +28,12 @@ bool Gameboy::initialize(bool debug) {
 	interruptsFlag = true;
 	drawFlag = false;
 
+	interrupts.vblank = false;
+	interrupts.lcdc = false;
+	interrupts.timer = false;
+	interrupts.serial = false;
+	interrupts.input = false;
+
 	rom.clear();
 	eram.clear();
 	vram.fill(0);
@@ -35,6 +41,8 @@ bool Gameboy::initialize(bool debug) {
 	oam.fill(0);
 	zram.fill(0);
 	ioregs.fill(0);
+
+	gpuInit();
 
 	if(debug) {
 		debugFlag = debug;
@@ -145,6 +153,7 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 			printf("%lu microseconds\n\n", delta);
 		}
 		opcode = readByte(pc++);
+		//printf("%02X\n", opcode);
 		(*this.*opMap[(opcode&0xF0)>>4][opcode&0x0F])();
 		if(debugFlag) {
 			printDebug();
@@ -166,4 +175,13 @@ void Gameboy::printDebug() {
 	printf("F: %02X SP: %04X PC: %04X\n", f, sp, pc);
 	printf("Flags: \n");
 	printf("BIOS: %d HALT: %d STOP: %d\n", biosFlag, haltFlag, stopFlag);
+	for(int i=0; i<accessList.size(); i++) {
+		if(accessList[i].write) {
+			printf("Wrote 0x%02X to 0x%04X\n", accessList[i].data, accessList[i].addr);	
+		}
+		else {
+			printf("Read 0x%02X from 0x%04X\n", accessList[i].data, accessList[i].addr);
+		}
+	}
+	accessList.clear();
 }

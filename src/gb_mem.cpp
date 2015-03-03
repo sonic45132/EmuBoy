@@ -3,6 +3,7 @@
 #include <fstream>
 #include <algorithm>
 #include <ctime>
+#include <vector>
 
 unsigned char Gameboy::readByte(unsigned short addr) {
 	switch(addr & 0xF000) {
@@ -10,7 +11,7 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 		case 0x0000:
 			if(biosFlag) {
 				if(addr < 0x100) {
-					printf("Read Byte: %02X\n", bios[addr]);
+					if(debugFlag) { accessList.push_back({false, addr, bios[addr]}); }
 					return bios[addr];
 				}
 				else {
@@ -20,25 +21,26 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 				}
 			}
 			else {
-				printf("Read Byte: %02X\n", rom[addr]);
+				if(debugFlag) { accessList.push_back({false, addr, rom[addr]}); }
 				return rom[addr];
 			}
 		//ROM BANK 0
 		case 0x1000:
 		case 0x2000:
 		case 0x3000:
-			printf("Read Byte: %02X\n", rom[addr]);
+			if(debugFlag) { accessList.push_back({false, addr, rom[addr]}); }
 			return rom[addr];
 		//SWITCHED ROM BANK
 		case 0x4000:
 		case 0x5000:
 		case 0x6000:
 		case 0x7000:
-			printf("Read Byte: %02X\n", rom[addr]);
+			if(debugFlag) { accessList.push_back({false, addr, rom[addr]}); }
 			return rom[addr];
 		//VRAM
 		case 0x8000:
 		case 0x9000:
+			if(debugFlag) { accessList.push_back({false, addr, vram[addr&0x1FFF]}); }
 			return vram[addr&0x1FFF];
 		//EXTERNAL RAM
 		case 0xA000:
@@ -62,11 +64,25 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 						return 0;
 					}
 				case 0xF00:
-					if(addr >= 0xFF80 && addr != 0xFFFF) { 
+					if(addr >= 0xFF80) { 
 						return zram[addr&0x7F]; 
 					} 
-					else { 
-						return ioregs[addr&0x00FF]; 
+					else if(addr <= 0xFF7F){ 
+						if(addr <= 0xFF4B && addr >= 0xFF40) { 
+							return  gpu_readByte(addr); 
+						}
+						else { 
+							return ioregs[addr&0x00FF];
+						}
+					}
+					else {
+						return (
+							(interrupts.vblank) ? 0x1 : 0x0 |
+							(interrupts.lcdc) ? 0x2 : 0x0 |
+							(interrupts.timer) ? 0x4 : 0x0 |
+							(interrupts.serial) ? 0x8 : 0x0 |
+							(interrupts.input) ? 0x10 : 0x0
+							);
 					}
 				default:
 					return wram[addr&0x1FFF];
@@ -75,7 +91,7 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 }
 
 bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
-	printf("Writing: %02X to %04X\n", data, addr);
+	if(debugFlag) { accessList.push_back({true, addr, data}); }
 	switch(addr & 0xF000) {
 		//BIOS AND ROM
 		case 0x0000:
@@ -115,7 +131,7 @@ bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
 			switch(addr&0xF00) {
 				case 0xE00:
 					if(addr < 0xFEA0) {
-						oam[addr&0x1FFF] = data;
+						oam[addr&0xFF] = data;
 						dumpRam(OAM);
 					}
 					else {
@@ -127,13 +143,25 @@ bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
 						zram[addr&0x7F] = data; 
 						dumpRam(ZRAM);
 					} 
-					else { 
-						ioregs[addr&0x00FF] = data; 
+					else if(addr <= 0xFF7F) { 
+						if(addr <= 0xFF4B && addr >= 0xFF40) { 
+							gpu_writeByte(data, addr); 
+						}
+						else { 
+							ioregs[addr&0x00FF] = data; 
+						}
 						dumpRam(IOREGS);
+					}
+					else {
+						interrupts.vblank = (data&0x1) ? true : false;
+						interrupts.lcdc = (data&0x2) ? true : false;
+						interrupts.timer = (data&0x4) ? true : false;
+						interrupts.serial = (data&0x8) ? true : false;
+						interrupts.input = (data&0x10) ? true : false;
 					}
 					break;
 				default:
-					wram[addr&0x1FFF] = data;
+					wram[addr&0xFF] = data;
 					dumpRam(WRAM);
 					break;
 			}
@@ -146,7 +174,7 @@ unsigned short Gameboy::readWord(unsigned short addr) {
 	unsigned short temp = 0;
 	temp = readByte(addr);
 	temp |= (readByte(addr+1) << 8);
-	printf("Read Word: %02X\n", temp);
+	if(debugFlag) { accessList.push_back({false, addr, temp}); }
 	return temp;
 }
 

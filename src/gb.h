@@ -50,6 +50,7 @@ private:
 		0xF5, 0x06, 0x19, 0x78, 0x86, 0x23, 0x05, 0x20, 0xFB, 0x86, 0x20, 0xFE, 0x3E, 0x01, 0xE0, 0x50
 	}};
 
+	//Ram arrays
 	std::vector<unsigned char>       rom;
 	std::vector<unsigned char>       eram;
 	std::array<unsigned char, 8192>  vram;
@@ -58,14 +59,45 @@ private:
 	std::array<unsigned char, 128>   zram;
 	std::array<unsigned char, 128>   ioregs;
 
+	//Memory access debugging
+	struct memAccess { bool write; unsigned short addr; unsigned short data; };
+	std::vector<memAccess> accessList;
+
+	struct gpuRegs {
+		unsigned char ly;
+		unsigned char lyc;
+		unsigned char yscrl;
+		unsigned char xscrl;
+		unsigned short bgTileBase;
+		unsigned short bgMapBase;
+		bool objSize;
+		bool lcdOn;
+		bool bgOn;
+		bool objOn;
+	};
+	gpuRegs gpuReg;
+
+	bool gpuInit();
+
+	struct interruptFlags {
+		bool vblank;
+		bool lcdc;
+		bool timer;
+		bool serial;
+		bool input;
+		unsigned char mode;
+	};
+	interruptFlags interrupts;
 
 	enum RamType {BIOS, ROM, VRAM, ERAM, WRAM, OAM, ZRAM, IOREGS};
 
 	unsigned char readByte(unsigned short addr);
 	unsigned short readWord(unsigned short addr);
+	unsigned char gpu_readByte(unsigned short addr);
 
 	bool writeByte(unsigned char data, unsigned short addr);
 	bool writeWord(unsigned short data, unsigned short addr);
+	bool gpu_writeByte(unsigned char data, unsigned short addr);
 
 	unsigned short getHL();
 	void setHL(unsigned short value);
