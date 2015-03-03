@@ -1,6 +1,7 @@
-#include "gb.h"
+#include "gb_gpu.h"
+#include <array>
 
-unsigned char Gameboy::gpu_readByte(unsigned short addr) {
+unsigned char GameboyGPU::gpu_readByte(unsigned short addr) {
 	switch(addr & 0x000F) {
 		case 0x0:
 			break;
@@ -15,12 +16,12 @@ unsigned char Gameboy::gpu_readByte(unsigned short addr) {
 		case 0x5:
 			return gpuReg.lyc;
 		default:
-			return ioregs[addr&0x01FF];
+			return regs[addr&0x01FF];
 	}
 }
 
-bool Gameboy::gpu_writeByte(unsigned char data, unsigned short addr) {
-	ioregs[addr&0xFF] = data;
+bool GameboyGPU::gpu_writeByte(unsigned char data, unsigned short addr) {
+	regs[addr&0xFF] = data;
 	switch(addr & 0x000F) {
 		case 0x0:
 			gpuReg.lcdOn = (data&0x80) ? true : false;
@@ -45,7 +46,8 @@ bool Gameboy::gpu_writeByte(unsigned char data, unsigned short addr) {
 	}
 }
 
-bool Gameboy::gpuInit() {
+bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
+	mem = memory;
 	gpuReg.ly = 0;
 	gpuReg.lyc = 0;
 	gpuReg.yscrl = 0;
@@ -57,4 +59,7 @@ bool Gameboy::gpuInit() {
 	gpuReg.bgOn = false;
 	gpuReg.objOn = true;
 	gpuReg.mode = 2;
+	regs.fill(0);
+	debugFlag = debug;
+	return true;
 }

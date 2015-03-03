@@ -1,11 +1,12 @@
-#include "gb.h"
+#include "gb_mem.h"
 #include <iostream> 
 #include <fstream>
 #include <algorithm>
 #include <ctime>
 #include <vector>
+#include <array>
 
-unsigned char Gameboy::readByte(unsigned short addr) {
+unsigned char GameboyMemory::readByte(unsigned short addr) {
 	switch(addr & 0xF000) {
 		//BIOS AND ROM BANK 0
 		case 0x0000:
@@ -13,11 +14,6 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 				if(addr < 0x100) {
 					if(debugFlag) { accessList.push_back({false, addr, bios[addr]}); }
 					return bios[addr];
-				}
-				else {
-					if(pc >= 0x100) {
-						biosFlag = false;
-					}
 				}
 			}
 			else {
@@ -69,7 +65,7 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 					} 
 					else if(addr <= 0xFF7F){ 
 						if(addr <= 0xFF4B && addr >= 0xFF40) { 
-							return  gpu_readByte(addr); 
+							return  gpu->gpu_readByte(addr); 
 						}
 						else { 
 							return ioregs[addr&0x00FF];
@@ -90,7 +86,7 @@ unsigned char Gameboy::readByte(unsigned short addr) {
 	}
 }
 
-bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
+bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 	if(debugFlag) { accessList.push_back({true, addr, data}); }
 	switch(addr & 0xF000) {
 		//BIOS AND ROM
@@ -145,7 +141,7 @@ bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
 					} 
 					else if(addr <= 0xFF7F) { 
 						if(addr <= 0xFF4B && addr >= 0xFF40) { 
-							gpu_writeByte(data, addr); 
+							gpu->gpu_writeByte(data, addr); 
 						}
 						else { 
 							ioregs[addr&0x00FF] = data; 
@@ -170,7 +166,7 @@ bool Gameboy::writeByte(unsigned char data, unsigned short addr) {
 	return true;
 }
 
-unsigned short Gameboy::readWord(unsigned short addr) {
+unsigned short GameboyMemory::readWord(unsigned short addr) {
 	unsigned short temp = 0;
 	temp = readByte(addr);
 	temp |= (readByte(addr+1) << 8);
@@ -179,7 +175,7 @@ unsigned short Gameboy::readWord(unsigned short addr) {
 }
 
 
-bool Gameboy::writeWord(unsigned short data, unsigned short addr) {
+bool GameboyMemory::writeWord(unsigned short data, unsigned short addr) {
 	if(!writeByte(data&0x00FF, addr)) {
 		return false;
 	}
@@ -191,19 +187,9 @@ bool Gameboy::writeWord(unsigned short data, unsigned short addr) {
 	return true;
 }
 
-void Gameboy::dumpRam(RamType type) {
+void GameboyMemory::dumpRam(RamType type) {
 	std::ofstream dump;
-	
-	time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[10];
 
-  time (&rawtime);
-  timeinfo = localtime(&rawtime);
-  strftime(buffer,10,"%T",timeinfo);
-
-	std::string stamp(buffer);
-	stamp += "-" + std::to_string( cycle_num );
 	switch(type) {
 		case BIOS:
 			dump.open("dumps/bios.bin", std::ios::binary);
@@ -256,4 +242,59 @@ void Gameboy::dumpRam(RamType type) {
 			break;
 	}
 	dump.close();
+}
+
+void GameboyMemory::printList() {
+	for(int i=0; i<accessList.size(); i++) {
+		if(accessList[i].write) {
+			printf("Wrote 0x%02X to 0x%04X\n", accessList[i].data, accessList[i].addr);	
+		}
+		else {
+			printf("Read 0x%02X from 0x%04X\n", accessList[i].data, accessList[i].addr);
+		}
+	}
+	accessList.clear();
+}
+
+void GameboyMemory::setBios(bool bios) {
+	biosFlag = bios;
+}
+
+bool GameboyMemory::init(GameboyGPU* gpuPtr, bool debug) {
+	gpu = gpuPtr;
+
+	rom.clear();
+	eram.clear();
+	vram.fill(0);
+	wram.fill(0);
+	oam.fill(0);
+	zram.fill(0);
+	ioregs.fill(0);
+
+	biosFlag = true;
+	debugFlag = debug;
+
+	return true;
+}
+
+bool GameboyMemory::loadRom(std::string path) {
+	std::ifstream roms;
+  roms.open(path, std::ios::binary);
+  roms.seekg (0, roms.end);
+  unsigned int length = roms.tellg();
+  roms.seekg (0, roms.beg);
+
+  char* buffer = new char[length];
+
+  roms.read(buffer,length);
+  if (!roms) {
+    std::cout << "error: only " << roms.gcount() << " could be read" << std::endl;
+    return false;
+  }
+
+  roms.close();
+
+  rom.reserve(length);
+  std::copy(buffer, (buffer+length), rom.begin());
+  return true;
 }
