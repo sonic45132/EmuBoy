@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "gb_mem.h"
 #include "gb_cpu.h"
@@ -31,7 +32,7 @@ public:
 	bool reset();
 	bool loadGame(std::string path);
 	bool emulateCycle(unsigned long delta);
-	bool getKeys(char* keys);
+	bool getKeys(std::array<char, 8> keys);
 
 };
 

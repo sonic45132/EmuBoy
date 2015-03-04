@@ -1,26 +1,34 @@
 #include "gb_gpu.h"
 #include <array>
 
-unsigned char GameboyGPU::gpu_readByte(unsigned short addr) {
-	switch(addr & 0x000F) {
-		case 0x0:
-			break;
-		case 0x1:
-			break;
-		case 0x2:
-			return gpuReg.yscrl;
-		case 0x3:
-			return gpuReg.xscrl;
-		case 0x4:
-			return gpuReg.ly;
-		case 0x5:
-			return gpuReg.lyc;
-		default:
-			return regs[addr&0x01FF];
+unsigned char GameboyGPU::readByte(unsigned short addr) {
+	switch(addr & 0xFF00) {
+		case 0x8000:
+		case 0x9000:
+			return vram[addr & 0x1FFF];
+		case 0xFE00:
+			return oam[addr & 0x00FF];
+		case 0xFF00:
+			switch(addr & 0x000F) {
+				case 0x0:
+					break;
+				case 0x1:
+					break;
+				case 0x2:
+					return gpuReg.yscrl;
+				case 0x3:
+					return gpuReg.xscrl;
+				case 0x4:
+					return gpuReg.ly;
+				case 0x5:
+					return gpuReg.lyc;
+				default:
+					return regs[addr&0x01FF];
+			}
 	}
 }
 
-bool GameboyGPU::gpu_writeByte(unsigned char data, unsigned short addr) {
+bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 	regs[addr&0xFF] = data;
 	switch(addr & 0x000F) {
 		case 0x0:
@@ -59,6 +67,8 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	gpuReg.bgOn = false;
 	gpuReg.objOn = true;
 	gpuReg.mode = 2;
+	vram.fill(0);
+	oam.fill(0);
 	regs.fill(0);
 	debugFlag = debug;
 	return true;

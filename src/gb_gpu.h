@@ -11,6 +11,10 @@ private:
 
 	bool debugFlag;
 
+	std::array<unsigned char, 8192>  vram;
+	std::array<unsigned char, 256>   oam;
+	std::array<unsigned char, 64>    regs;
+
 	struct gpuRegs {
 		unsigned char ly;
 		unsigned char lyc;
@@ -26,13 +30,14 @@ private:
 	};
 	gpuRegs gpuReg;
 
-	std::array<unsigned char, 64> regs;
-
 public:
 	bool init(GameboyMemory* memory, bool debug);
+	bool tick(int mClocks);
 
-	unsigned char gpu_readByte(unsigned short addr);
-	bool gpu_writeByte(unsigned char data, unsigned short addr);
+	unsigned char readByte(unsigned short addr);
+	bool writeByte(unsigned char data, unsigned short addr);
+
+	void* getScreen();
 };
 
 #endif

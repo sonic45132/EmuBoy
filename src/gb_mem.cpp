@@ -37,7 +37,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 		case 0x8000:
 		case 0x9000:
 			if(debugFlag) { accessList.push_back({false, addr, vram[addr&0x1FFF]}); }
-			return vram[addr&0x1FFF];
+			return gpu->readByte(addr);
 		//EXTERNAL RAM
 		case 0xA000:
 		case 0xB000:
@@ -54,7 +54,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 			switch(addr&0xF00) {
 				case 0xE00:
 					if(addr < 0xFEA0) {
-						return oam[addr&0x1FFF];
+						return gpu->readByte(addr); 
 					}
 					else {
 						return 0;
@@ -65,7 +65,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 					} 
 					else if(addr <= 0xFF7F){ 
 						if(addr <= 0xFF4B && addr >= 0xFF40) { 
-							return  gpu->gpu_readByte(addr); 
+							return  gpu->readByte(addr); 
 						}
 						else { 
 							return ioregs[addr&0x00FF];
@@ -141,7 +141,7 @@ bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 					} 
 					else if(addr <= 0xFF7F) { 
 						if(addr <= 0xFF4B && addr >= 0xFF40) { 
-							gpu->gpu_writeByte(data, addr); 
+							gpu->writeByte(data, addr); 
 						}
 						else { 
 							ioregs[addr&0x00FF] = data; 
