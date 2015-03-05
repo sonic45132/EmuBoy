@@ -36,8 +36,13 @@ bool Gameboy::loadGame(std::string path) {
 }
 
 bool Gameboy::emulateCycle(unsigned long delta) {
+	bool result = true;
+	int mClocks = 0;
+	
 	if(debugFlag) {
 		printf("%lu microseconds\n\n", delta);
 	}
-	return cpu->execute();
+
+	result = cpu->execute(&mClocks);
+	result = gpu->tick(mClocks);
 }

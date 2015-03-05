@@ -10,6 +10,8 @@ private:
 	unsigned short pc;
 	unsigned short sp;
 
+	int mTime;
+
 	GameboyMemory* mem;
 
 	unsigned int cycle_num;
@@ -468,7 +470,7 @@ private:
 
 public:
 	bool init(GameboyMemory* memory, bool debug);
-	bool execute();
+	bool execute(int* mClocks);
 
 
 };

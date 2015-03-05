@@ -2072,6 +2072,8 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 	sp = 0;
 	pc = 0;
 
+	mTime = 0;
+
 	a = 0;
 	b = 0;
 	c = 0;
@@ -2156,7 +2158,7 @@ void GameboyCPU::EXT() {
 
 }
 
-bool GameboyCPU::execute() {
+bool GameboyCPU::execute(int* mClocks) {
 	bool result = true;
 	cycle_num++;
 
@@ -2172,6 +2174,8 @@ bool GameboyCPU::execute() {
 		opcode = mem->readByte(pc++);
 		//printf("%02X\n", opcode);
 		(*this.*opMap[(opcode&0xF0)>>4][opcode&0x0F])();
+		*mClocks = 2; //mTime;
+
 		if(debugFlag) {
 			printDebug();
 		}
