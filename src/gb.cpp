@@ -22,7 +22,7 @@ bool Gameboy::initialize(bool debug, Texture* texture) {
 
 	bool result = true;
 	debugFlag = debug;
-	drawFlag = false;
+	drawFlag = true;
 
 	screen = texture;
 
@@ -41,8 +41,8 @@ bool Gameboy::loadGame(std::string path) {
 
 bool Gameboy::emulateCycle(unsigned long delta) {
 	bool result = true;
-	drawFlag = true;
 	int mClocks = 0;
+	drawFlag = false;
 	
 	if(debugFlag) {
 		printf("%lu microseconds\n\n", delta);
@@ -56,4 +56,5 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 		screen->copyPixels(gpu->getScreen());
 		screen->unlockTexture();
 	}
+	return true;
 }

@@ -2,6 +2,7 @@
 #include <array>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 unsigned char GameboyGPU::readByte(unsigned short addr) {
 	switch(addr & 0xFF00) {
@@ -57,6 +58,7 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 }
 
 bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
+	srand(time(NULL));
 	mem = memory;
 	ioReg.ly = 0;
 	ioReg.lyc = 0;
@@ -82,8 +84,11 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	
 	switch(ioReg.mode) {
 		case 0:
+			printf("GPU Mode 0.\n");
 			if(clocks >= 51) {
+				printf("Clocks >= 51.\n");
 				if(ioReg.ly == 143) {
+					printf("Draw.\n");
 					ioReg.mode = 1;
 					*drawFlag = true;
 				}
@@ -114,6 +119,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 			break;
 
 		case 3:
+			ioReg.mode = 0;
 			renderScanline();
 			break;
 	};
@@ -127,10 +133,9 @@ void GameboyGPU::renderScanline() {
 }
 
 void* GameboyGPU::getScreen() {
-	srand(time(NULL));
 	for(int offset= 0; offset < 160*144; offset+= 160) {
 		for(int i=0; i<160; i++) {
-			screen[i+offset] = color(rand()%256, rand()%256, rand()%256);
+			screen[i+offset] = color(rand()%256,rand()%256,rand()%256);
 		}
 	}
 	return (void*)screen.data();

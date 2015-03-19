@@ -43,7 +43,7 @@ bool init() {
 		else
 		{
 			//Create vsynced renderer for window
-			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC );
+			gRenderer = SDL_CreateRenderer( gWindow, -1, SDL_RENDERER_ACCELERATED );
 			if( gRenderer == NULL )
 			{
 				printf( "Renderer could not be created! SDL Error: %s\n", SDL_GetError() );
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	if(!gb.initialize(false, gTexture)) {
+	if(!gb.initialize(true, gTexture)) {
 		printf("Gameboy failed to initialize.\n");
 		return -2;
 	}
@@ -127,8 +127,11 @@ int main(int argc, char* argv[]) {
 	bool quit = false;
 	SDL_Event e;
 
+	//int FPS = 60;
+
 	while(!quit) {
 		start_time = std::chrono::high_resolution_clock::now();
+		//unsigned int start_t = SDL_GetTicks();
 		
 		if(!gb.emulateCycle(delta)) {
 			printf("Gameboy stopped or halted.\n");
@@ -148,11 +151,15 @@ int main(int argc, char* argv[]) {
 			}
 		}
 
-		//SDL_Delay(1);
+		// if((1000/FPS)>(SDL_GetTicks()-start_t))
+  //   {
+  //       SDL_Delay((1000/FPS)-(SDL_GetTicks()-start_t)); //Yay stable framerate!
+  //   }
 
 		end_time = std::chrono::high_resolution_clock::now();
 		time = end_time - start_time;
 		delta = std::chrono::duration_cast<std::chrono::microseconds>(time).count();
+
 	}
 
 	close();
