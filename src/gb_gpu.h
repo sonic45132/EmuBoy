@@ -18,7 +18,7 @@ private:
 	std::array<unsigned char, 256>   oam;
 	std::array<unsigned char, 64>    regs;
 
-	std::array<unsigned char, 69120> screen;
+	std::array<unsigned int, 92160> screen;
 
 	struct IORegs {
 		unsigned char ly;
@@ -35,9 +35,12 @@ private:
 	};
 	IORegs ioReg;
 
+	void renderScanline();
+	unsigned int color(unsigned char r, unsigned char g, unsigned char b);
+
 public:
 	bool init(GameboyMemory* memory, bool debug);
-	bool tick(int mClocks);
+	bool tick(int mClocks, bool* drawFlag);
 
 	unsigned char readByte(unsigned short addr);
 	bool writeByte(unsigned char data, unsigned short addr);

@@ -8,6 +8,7 @@
 #include "gb_mem.h"
 #include "gb_cpu.h"
 #include "gb_gpu.h"
+#include "texture.h"
 
 class Gameboy {
 
@@ -18,6 +19,7 @@ private:
 	GameboyMemory* mem;
 	GameboyCPU* cpu;
 	GameboyGPU* gpu;
+	Texture* screen;
 
 	bool debugFlag;	
 
@@ -28,7 +30,7 @@ public:
 
 	bool drawFlag;
 
-	bool initialize(bool debug = false);
+	bool initialize(bool debug = false, Texture* texture = NULL);
 	bool reset();
 	bool loadGame(std::string path);
 	bool emulateCycle(unsigned long delta);

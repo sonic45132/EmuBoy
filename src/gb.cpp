@@ -1,4 +1,5 @@
 #include "gb.h"
+#include "texture.h"
 #include <iostream> 
 #include <fstream>
 #include <algorithm>
@@ -17,10 +18,13 @@ Gameboy::~Gameboy() {
 	delete mem;
 }
 
-bool Gameboy::initialize(bool debug) {
+bool Gameboy::initialize(bool debug, Texture* texture) {
 
 	bool result = true;
 	debugFlag = debug;
+	drawFlag = false;
+
+	screen = texture;
 
 	printf("Gameboy init start.\n");
 	mem->init(gpu, debugFlag);
@@ -37,6 +41,7 @@ bool Gameboy::loadGame(std::string path) {
 
 bool Gameboy::emulateCycle(unsigned long delta) {
 	bool result = true;
+	drawFlag = true;
 	int mClocks = 0;
 	
 	if(debugFlag) {
@@ -44,5 +49,11 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 	}
 
 	result = cpu->execute(&mClocks);
-	result = gpu->tick(mClocks);
+	result = gpu->tick(mClocks, &drawFlag);
+
+	if(drawFlag) {
+		screen->lockTexture();
+		screen->copyPixels(gpu->getScreen());
+		screen->unlockTexture();
+	}
 }

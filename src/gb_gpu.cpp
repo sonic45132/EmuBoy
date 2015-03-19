@@ -1,5 +1,7 @@
 #include "gb_gpu.h"
 #include <array>
+#include <stdlib.h>
+#include <time.h>
 
 unsigned char GameboyGPU::readByte(unsigned short addr) {
 	switch(addr & 0xFF00) {
@@ -70,11 +72,12 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	vram.fill(0);
 	oam.fill(0);
 	regs.fill(0);
+	screen.fill(0);
 	debugFlag = debug;
 	return true;
 }
 
-bool GameboyGPU::tick(int mClocks) {
+bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	clocks += mClocks;
 	
 	switch(ioReg.mode) {
@@ -82,7 +85,7 @@ bool GameboyGPU::tick(int mClocks) {
 			if(clocks >= 51) {
 				if(ioReg.ly == 143) {
 					ioReg.mode = 1;
-
+					*drawFlag = true;
 				}
 				else {
 					ioReg.mode = 2;
@@ -111,8 +114,32 @@ bool GameboyGPU::tick(int mClocks) {
 			break;
 
 		case 3:
+			renderScanline();
 			break;
 	};
 
 	return true;
+}
+
+void GameboyGPU::renderScanline() {
+	//TODO: Render scanlinee
+
+}
+
+void* GameboyGPU::getScreen() {
+	srand(time(NULL));
+	for(int offset= 0; offset < 160*144; offset+= 160) {
+		for(int i=0; i<160; i++) {
+			screen[i+offset] = color(rand()%256, rand()%256, rand()%256);
+		}
+	}
+	return (void*)screen.data();
+}
+
+unsigned int GameboyGPU::color(unsigned char r, unsigned char g, unsigned char b) {
+	unsigned int temp = 0;
+	temp |= r << 24;
+	temp |= g << 16;
+	temp |= b << 8;
+	return temp;
 }

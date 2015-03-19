@@ -103,7 +103,7 @@ bool Texture::loadFromFile( std::string path )
 bool Texture::createBlank( int width, int height )
 {
 	//Create uninitialized texture
-	mTexture = SDL_CreateTexture( mRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, width, height );
+	mTexture = SDL_CreateTexture( mRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, width, height );
 	if( mTexture == NULL )
 	{
 		printf( "Unable to create blank texture! SDL Error: %s\n", SDL_GetError() );
@@ -162,7 +162,12 @@ void Texture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* cen
 	}
 
 	//Render to screen
-	SDL_RenderCopyEx( mRenderer, mTexture, clip, &renderQuad, angle, center, flip );
+	int result = 0;
+	result = SDL_RenderCopyEx( mRenderer, mTexture, clip, NULL, angle, center, flip );
+	if(result != 0) {
+		printf("Render failed with error: %s\n", SDL_GetError());
+
+	}
 }
 
 int Texture::getWidth()

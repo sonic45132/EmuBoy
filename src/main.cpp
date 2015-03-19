@@ -28,7 +28,7 @@ bool init() {
 	else
 	{
 		//Set texture filtering to linear
-		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" ) )
+		if( !SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "0" ) )
 		{
 			printf( "Warning: Linear texture filtering not enabled!" );
 		}
@@ -53,6 +53,7 @@ bool init() {
 			{
 				//Initialize renderer color
 				gTexture = new Texture(gRenderer);
+				gTexture->createBlank(160,144);
 				SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
 				SDL_RenderClear( gRenderer );
 				SDL_RenderPresent( gRenderer );
@@ -98,7 +99,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-	if(!gb.initialize(true)) {
+	if(!gb.initialize(false, gTexture)) {
 		printf("Gameboy failed to initialize.\n");
 		return -2;
 	}
@@ -134,11 +135,12 @@ int main(int argc, char* argv[]) {
 			quit = true;
 		}
 
-		// if(gb.drawFlag) {
-		// 	printf("Screen Draw\n");
-		// 	SDL_RenderClear( gRenderer );
-		// 	SDL_RenderPresent( gRenderer );
-		// }
+		if(gb.drawFlag) {
+			//printf("Screen Draw\n");
+			SDL_RenderClear( gRenderer );
+			gTexture->render(0,0);
+			SDL_RenderPresent( gRenderer );
+		}
 		
 		while(SDL_PollEvent(&e) != 0) {
 			if(e.type == SDL_QUIT) {
