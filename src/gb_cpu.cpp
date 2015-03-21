@@ -2070,7 +2070,7 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 
 	opcode = 0;
 	sp = 0;
-	pc = 0;
+	pc = 0x150;
 
 	mTime = 0;
 
@@ -2083,7 +2083,7 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 	l = 0;
 	f = 0;
 
-	biosFlag = true;
+	biosFlag = false;
 	haltFlag = false;
 	stopFlag = false;
 	interruptsFlag = false;
@@ -2181,8 +2181,8 @@ bool GameboyCPU::execute(int* mClocks) {
 		}
 	}
 
-	if(pc > 0x100) {
-		haltFlag = true;
-	}
+	// if(pc > 0x100) {
+	// 	haltFlag = true;
+	// }
 	return result;
 }

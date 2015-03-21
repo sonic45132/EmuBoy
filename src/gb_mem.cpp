@@ -61,6 +61,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 					}
 				case 0xF00:
 					if(addr >= 0xFF80) { 
+						if(debugFlag) { accessList.push_back({false, addr, zram[addr&0x7F]}); }
 						return zram[addr&0x7F]; 
 					} 
 					else if(addr <= 0xFF7F){ 
@@ -102,8 +103,8 @@ bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 		//VRAM
 		case 0x8000:
 		case 0x9000:
-			vram[addr&0x1FFF] = data;
-			dumpRam(VRAM);
+			gpu->writeByte(data, addr);
+			//vram[addr&0x1FFF] = data;
 			break;
 		//EXTERNAL RAM
 		case 0xA000:

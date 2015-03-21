@@ -5,56 +5,70 @@
 #include <math.h>
 
 unsigned char GameboyGPU::readByte(unsigned short addr) {
-	switch(addr & 0xFF00) {
+	switch(addr & 0xF000) {
 		case 0x8000:
 		case 0x9000:
 			return vram[addr & 0x1FFF];
-		case 0xFE00:
-			return oam[addr & 0x00FF];
-		case 0xFF00:
-			switch(addr & 0x000F) {
-				case 0x0:
-					break;
-				case 0x1:
-					break;
-				case 0x2:
-					return ioReg.yscrl;
-				case 0x3:
-					return ioReg.xscrl;
-				case 0x4:
-					return ioReg.ly;
-				case 0x5:
-					return ioReg.lyc;
-				default:
-					return regs[addr&0x01FF];
+		case 0xF000:
+			if(addr & 0x0F00 == 0x0E00) {
+				return oam[addr & 0x00FF];
+			}
+			else {
+				switch(addr & 0x000F) {
+					case 0x1:
+						return ioReg.mode;
+					case 0x2:
+						return ioReg.yscrl;
+					case 0x3:
+						return ioReg.xscrl;
+					case 0x4:
+						return ioReg.ly;
+					case 0x5:
+						return ioReg.lyc;
+					default:
+						return regs[addr&0x01FF];
+				}
 			}
 	}
 }
 
 bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
-	regs[addr&0xFF] = data;
-	switch(addr & 0x000F) {
-		case 0x0:
-			ioReg.lcdOn = (data&0x80) ? true : false;
-			ioReg.bgTileBase = (data&0x10) ? 0x0000 : 0x0800;
-			ioReg.bgMapBase = (data&0x08) ? 0x1C00 : 0x1800;
-			ioReg.objSize = (data&0x04) ? true :false;
-			ioReg.objOn = (data&0x02) ? true : false;
-			ioReg.bgOn = (data&0x01) ? true : false;
+	switch(addr & 0xF000) {
+		case 0x8000:
+		case 0x9000:
+			vram[addr & 0x1FFF] = data;
 			break;
-		case 0x2:
-			ioReg.yscrl = data;
-			break;
-		case 0x3:
-			ioReg.xscrl = data;
-			break;
-		case 0x4:
-			ioReg.ly = 0;
-			break;
-		case 0x5:
-			ioReg.lyc = data;
-			break;
+		case 0xF000:
+			if(addr & 0x0F00 == 0x0E00) {
+				oam[addr & 0xFF] = data;
+			}
+			else {
+				regs[addr&0xFF] = data;
+				switch(addr & 0x000F) {
+					case 0x0:
+						ioReg.lcdOn = (data&0x80) ? true : false;
+						ioReg.bgTileBase = (data&0x10) ? 0x0000 : 0x0800;
+						ioReg.bgMapBase = (data&0x08) ? 0x1C00 : 0x1800;
+						ioReg.objSize = (data&0x04) ? true :false;
+						ioReg.objOn = (data&0x02) ? true : false;
+						ioReg.bgOn = (data&0x01) ? true : false;
+						break;
+					case 0x2:
+						ioReg.yscrl = data;
+						break;
+					case 0x3:
+						ioReg.xscrl = data;
+						break;
+					case 0x4:
+						ioReg.ly = 0;
+						break;
+					case 0x5:
+						ioReg.lyc = data;
+						break;
+				}
+			}
 	}
+	return true;
 }
 
 bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
@@ -76,6 +90,16 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	regs.fill(0);
 	screen.fill(0);
 	debugFlag = debug;
+
+	palette[3] = color(0,0,0);
+	palette[2] = color(85,85,85);
+	palette[1] = color(170,170,170);
+	palette[0] = color(255,255,255);
+
+	for(int i = 0; i < tiles.size(); i++) {
+		tiles[i].fill(0);
+	}
+
 	return true;
 }
 
@@ -84,11 +108,11 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	
 	switch(ioReg.mode) {
 		case 0:
-			printf("GPU Mode 0.\n");
+			//printf("GPU Mode 0.\n");
 			if(clocks >= 51) {
-				printf("Clocks >= 51.\n");
+				//printf("Clocks >= 51.\n");
 				if(ioReg.ly == 143) {
-					printf("Draw.\n");
+					//printf("Draw.\n");
 					ioReg.mode = 1;
 					*drawFlag = true;
 				}
@@ -129,15 +153,56 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 
 void GameboyGPU::renderScanline() {
 	//TODO: Render scanlinee
+	unsigned short mapBase = ioReg.bgMapBase;
+	mapBase += ((ioReg.ly + ioReg.yscrl) & 255) >> 3; 
+
+	unsigned short lineOffset = (ioReg.xscrl >> 3);
+
+	unsigned short tile = vram[mapBase + lineOffset];
+
+	unsigned char x = ioReg.xscrl & 7;
+	unsigned char y = (ioReg.ly + ioReg.yscrl) & 7;
+
+	int screenOffset = ioReg.ly * 160; 
+
+	for(int i = 0; i < 160; i++) {
+
+		screen[screenOffset + i] = palette[tiles[tile][(y * 8) + x]];
+
+		x++;
+		if(x == 8) {
+			x = 0;
+			lineOffset = (lineOffset + 1) & 31;
+			tile = vram[mapBase + lineOffset];
+		}
+	}
 
 }
 
-void* GameboyGPU::getScreen() {
-	for(int offset= 0; offset < 160*144; offset+= 160) {
-		for(int i=0; i<160; i++) {
-			screen[i+offset] = color(rand()%256,rand()%256,rand()%256);
+void GameboyGPU::updateTiles() {
+	printf("Updating tiles.\n");
+	unsigned short base = 0x8000;
+	unsigned char colorLower = 0;
+	unsigned char colorUpper = 0;
+	unsigned char color = 0;
+	for(int i = 0; i < 384; i++) {
+		for(int j = 0; j < 8; j++) {
+			for(int k = 0; k < 8; k++) {
+				colorLower = ((vram[base + (i * 16) + (j * 2)] & (1 << (7 - k))) >> (7 - k));
+				colorUpper = (((vram[base + (i * 16) + (j * 2) + 1] & (1 << (7 - k))) >> (7 - k)) << 1);
+				color = colorUpper | colorLower;
+				tiles[i][(j * 8) + k] = color;
+			}
 		}
 	}
+}
+
+void* GameboyGPU::getScreen() {
+	// for(int offset= 0; offset < 160*144; offset+= 160) {
+	// 	for(int i=0; i<160; i++) {
+	// 		screen[i+offset] = color(rand()%256,rand()%256,rand()%256);
+	// 	}
+	// }
 	return (void*)screen.data();
 }
 

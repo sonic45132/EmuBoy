@@ -5,11 +5,9 @@
 #include <algorithm>
 
 Gameboy::Gameboy() {
-	printf("Gameboy construtor start.\n");
 	mem = new GameboyMemory();
 	cpu = new GameboyCPU();
 	gpu = new GameboyGPU();
-	printf("Gameboy construtor end.\n");
 }
 
 Gameboy::~Gameboy() {
@@ -26,11 +24,9 @@ bool Gameboy::initialize(bool debug, Texture* texture) {
 
 	screen = texture;
 
-	printf("Gameboy init start.\n");
 	mem->init(gpu, debugFlag);
 	cpu->init(mem, debugFlag);
 	gpu->init(mem, debugFlag);
-	printf("Gameboy init end.\n");
 
 	return result;
 }
@@ -49,6 +45,9 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 	}
 
 	result = cpu->execute(&mClocks);
+
+	if(!result) return false;
+
 	result = gpu->tick(mClocks, &drawFlag);
 
 	if(drawFlag) {
@@ -56,5 +55,5 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 		screen->copyPixels(gpu->getScreen());
 		screen->unlockTexture();
 	}
-	return true;
+	return result;
 }
