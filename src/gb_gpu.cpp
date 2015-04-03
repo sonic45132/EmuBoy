@@ -36,7 +36,9 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 	switch(addr & 0xF000) {
 		case 0x8000:
 		case 0x9000:
+      //printf("Writing 0x%X to 0x%X.\n", data, addr);
 			vram[addr & 0x1FFF] = data;
+			updateTiles();
 			break;
 		case 0xF000:
 			if(addr & 0x0F00 == 0x0E00) {
@@ -92,8 +94,8 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	debugFlag = debug;
 
 	palette[3] = color(0,0,0);
-	palette[2] = color(85,85,85);
-	palette[1] = color(170,170,170);
+	palette[1] = color(85,85,85);
+	palette[2] = color(170,170,170);
 	palette[0] = color(255,255,255);
 
 	for(int i = 0; i < tiles.size(); i++) {
@@ -154,7 +156,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 void GameboyGPU::renderScanline() {
 	//TODO: Render scanlinee
 	unsigned short mapBase = ioReg.bgMapBase;
-	mapBase += ((ioReg.ly + ioReg.yscrl) & 255) >> 3; 
+	mapBase += (((ioReg.ly + ioReg.yscrl) & 255) >> 3)*32; 
 
 	unsigned short lineOffset = (ioReg.xscrl >> 3);
 
@@ -176,20 +178,18 @@ void GameboyGPU::renderScanline() {
 			tile = vram[mapBase + lineOffset];
 		}
 	}
-
 }
 
 void GameboyGPU::updateTiles() {
-	printf("Updating tiles.\n");
-	unsigned short base = 0x8000;
+  //printf("Updating tiles.\n");
 	unsigned char colorLower = 0;
 	unsigned char colorUpper = 0;
 	unsigned char color = 0;
 	for(int i = 0; i < 384; i++) {
 		for(int j = 0; j < 8; j++) {
 			for(int k = 0; k < 8; k++) {
-				colorLower = ((vram[base + (i * 16) + (j * 2)] & (1 << (7 - k))) >> (7 - k));
-				colorUpper = (((vram[base + (i * 16) + (j * 2) + 1] & (1 << (7 - k))) >> (7 - k)) << 1);
+				colorLower = ((vram[(i * 16) + (j * 2)] & (1 << (7 - k))) >> (7 - k));
+				colorUpper = (((vram[(i * 16) + (j * 2) + 1] & (1 << (7 - k))) >> (7 - k)) << 1);
 				color = colorUpper | colorLower;
 				tiles[i][(j * 8) + k] = color;
 			}
@@ -198,11 +198,9 @@ void GameboyGPU::updateTiles() {
 }
 
 void* GameboyGPU::getScreen() {
-	// for(int offset= 0; offset < 160*144; offset+= 160) {
-	// 	for(int i=0; i<160; i++) {
-	// 		screen[i+offset] = color(rand()%256,rand()%256,rand()%256);
-	// 	}
-	// }
+	for(int i=0; i<160; i++) {
+		screen[i+160*143] = color(0, 206, 209);
+	}
 	return (void*)screen.data();
 }
 

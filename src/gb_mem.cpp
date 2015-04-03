@@ -36,7 +36,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 		//VRAM
 		case 0x8000:
 		case 0x9000:
-			if(debugFlag) { accessList.push_back({false, addr, vram[addr&0x1FFF]}); }
+			printf("Reading vram.\n");
 			return gpu->readByte(addr);
 		//EXTERNAL RAM
 		case 0xA000:

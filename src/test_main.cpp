@@ -4,6 +4,54 @@
 #include <SDL_image.h>
 #include <chrono>
 #include <iostream>
+#include <fstream>
+
+class Debug {
+	public:
+		Gameboy* gb = NULL;
+		GameboyGPU* gpu = NULL;
+		bool init(Gameboy* gameboy) {
+			gb = gameboy;
+			gpu = gb->gpu;
+		}
+
+		void dumpVRAM() {
+			std::ofstream dump;
+			dump.open("dumps/vram.bin", std::ios::binary);
+			for(int i=0;i<gpu->vram.size();i++) {
+				dump << gpu->vram[i];
+			}
+			dump.close();
+		}
+
+		void dumpOAM() {
+			std::ofstream dump;
+			dump.open("dumps/oam.bin", std::ios::binary);
+			for(int i=0;i<gpu->oam.size();i++) {
+				dump << gpu->oam[i];
+			}
+			dump.close();
+		}
+
+		void dumpRegs() {
+			std::ofstream dump;
+			dump.open("dumps/regs.bin", std::ios::binary);
+			for(int i=0;i<gpu->regs.size();i++) {
+				dump << gpu->regs[i];
+			}
+			dump.close();
+		}
+
+		void dumpScreen() {
+			std::ofstream dump;
+			dump.open("dumps/screen.bin", std::ios::binary);
+			for(int i=0;i<gpu->screen.size();i++) {
+				dump << gpu->screen[i];
+			}
+			dump.close();
+		}
+
+};
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 576;
@@ -11,6 +59,7 @@ const int SCREEN_HEIGHT = 576;
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 Texture* gTexture = NULL;
+Debug dbg;
 
 
 Gameboy gb;
@@ -99,7 +148,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-  if(!gb.initialize(false, gTexture)) {
+  if(!gb.initialize(true, gTexture)) {
 		printf("Gameboy failed to initialize.\n");
 		return -2;
 	}
@@ -111,11 +160,13 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else {
-		if(!gb.loadGame("roms/opus5.gb")) {
+		if(!gb.loadGame("roms/metroid.gb")) {
 			printf("Failed to load ROM\n");
 			return -3;
 		}
 	}
+
+	dbg.init(&gb);
 
 
   auto end_time = std::chrono::high_resolution_clock::now();
@@ -125,6 +176,8 @@ int main(int argc, char* argv[]) {
 
   unsigned long delta = 0;
 	bool quit = false;
+	bool pause = false;
+	bool step = false;
 	SDL_Event e;
 
 	//int FPS = 60;
@@ -133,28 +186,53 @@ int main(int argc, char* argv[]) {
 		start_time = std::chrono::high_resolution_clock::now();
 		//unsigned int start_t = SDL_GetTicks();
 		
-		if(!gb.emulateCycle(delta)) {
-			printf("Gameboy stopped or halted.\n");
-			quit = true;
-		}
+		if(!pause || step) {
+			if(!gb.emulateCycle(delta)) {
+				printf("Gameboy stopped or halted.\n");
+				quit = true;
+			}
 
-		if(gb.drawFlag) {
-			//printf("Screen Draw\n");
-			SDL_RenderClear( gRenderer );
-			gTexture->render(0,0);
-			SDL_RenderPresent( gRenderer );
+			if(gb.drawFlag) {
+				//printf("Screen Draw\n");
+				SDL_RenderClear( gRenderer );
+				gTexture->render(0,0);
+				SDL_RenderPresent( gRenderer );
+			}
+			step = false;
 		}
 		
 		while(SDL_PollEvent(&e) != 0) {
 			if(e.type == SDL_QUIT) {
 				quit = true;
 			}
+			else if(e.type == SDL_KEYDOWN ) {
+				switch(e.key.keysym.sym) {
+					case SDLK_p:
+						pause = !pause;
+						break;
+					case SDLK_h:
+						dbg.dumpVRAM();
+						break;
+					case SDLK_j:
+						dbg.dumpOAM();
+						break;
+					case SDLK_k:
+						dbg.dumpScreen();
+						break;
+					case SDLK_l:
+						dbg.dumpRegs();
+						break;
+					case SDLK_n:
+						step = true;
+						break;
+				}
+			}
 		}
 
-		// if((1000/FPS)>(SDL_GetTicks()-start_t))
-  //   {
-  //       SDL_Delay((1000/FPS)-(SDL_GetTicks()-start_t)); //Yay stable framerate!
-  //   }
+		if(pause)
+    {
+      SDL_Delay(16); //Yay stable framerate!
+    }
 
 		end_time = std::chrono::high_resolution_clock::now();
 		time = end_time - start_time;

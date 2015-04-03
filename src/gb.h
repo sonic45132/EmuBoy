@@ -12,7 +12,7 @@
 
 class Gameboy {
 
-friend class GameBoyTest;
+friend class Debug;
 
 private:
 

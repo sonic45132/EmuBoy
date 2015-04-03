@@ -2070,7 +2070,7 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 
 	opcode = 0;
 	sp = 0;
-	pc = 0x150;
+	pc = 0;
 
 	mTime = 0;
 
@@ -2083,7 +2083,7 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 	l = 0;
 	f = 0;
 
-	biosFlag = false;
+	biosFlag = true;
 	haltFlag = false;
 	stopFlag = false;
 	interruptsFlag = false;
@@ -2167,9 +2167,10 @@ bool GameboyCPU::execute(int* mClocks) {
 		result = false;
 	}
 	else {
-		if(pc > 0x100) {
+		if(biosFlag && (pc >= 0x100)) {
 			biosFlag = false;
 			mem->setBios(biosFlag);
+			pc = 0x100;
 		}
 		opcode = mem->readByte(pc++);
 		//printf("%02X\n", opcode);

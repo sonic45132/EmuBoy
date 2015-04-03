@@ -8,6 +8,7 @@ class GameboyMemory;
 class GameboyGPU {
 
 private:
+	friend class Debug;
 	GameboyMemory* mem;
 
 	bool debugFlag;
