@@ -33,9 +33,23 @@ class Debug {
 			dump.close();
 		}
 
+		void dumpTiles() {
+			std::ofstream dump;
+			dump.open("dumps/tiles.txt", std::ios::binary);
+			for(int i=0;i<gpu->tiles.size();i++) {
+				for(int j=0; j<gpu->tiles[i].size(); j++) {
+					dump << (char)(gpu->tiles[i][j] + 48);
+					if((j+1)%8==0) 
+						dump << "\n";
+				}
+				dump << "\n\n";
+			}
+			dump.close();
+		}
+
 		void dumpRegs() {
 			std::ofstream dump;
-			dump.open("dumps/regs.bin", std::ios::binary);
+			dump.open("dumps/regs.bin");
 			for(int i=0;i<gpu->regs.size();i++) {
 				dump << gpu->regs[i];
 			}
@@ -221,6 +235,9 @@ int main(int argc, char* argv[]) {
 						break;
 					case SDLK_l:
 						dbg.dumpRegs();
+						break;
+					case SDLK_t:
+						dbg.dumpTiles();
 						break;
 					case SDLK_n:
 						step = true;

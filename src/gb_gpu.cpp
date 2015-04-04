@@ -184,14 +184,17 @@ void GameboyGPU::updateTiles() {
   //printf("Updating tiles.\n");
 	unsigned char colorLower = 0;
 	unsigned char colorUpper = 0;
-	unsigned char color = 0;
+	unsigned char lowerBit = 0;
+	unsigned char upperBit = 0;
+
 	for(int i = 0; i < 384; i++) {
 		for(int j = 0; j < 8; j++) {
+			colorLower = vram[(i * 16) + (j * 2)];
+			colorUpper = vram[(i * 16) + (j * 2) + 1];
 			for(int k = 0; k < 8; k++) {
-				colorLower = ((vram[(i * 16) + (j * 2)] & (1 << (7 - k))) >> (7 - k));
-				colorUpper = (((vram[(i * 16) + (j * 2) + 1] & (1 << (7 - k))) >> (7 - k)) << 1);
-				color = colorUpper | colorLower;
-				tiles[i][(j * 8) + k] = color;
+				lowerBit = (colorLower & (1 << (7 - k))) >> (7 - k);
+				upperBit = (colorUpper & (1 << (7 - k))) >> (7 - k);
+				tiles[i][(j * 8) + k] = (upperBit * 2) + lowerBit;
 			}
 		}
 	}
