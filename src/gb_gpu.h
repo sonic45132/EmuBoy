@@ -23,7 +23,8 @@ private:
 	std::array<unsigned int, 92160> screen;
 	std::array<std::array<unsigned char, 64>, 384> tiles;
 
-	std::map<int, unsigned int> palette;
+	std::map<unsigned char, unsigned int> colors;
+	std::array<unsigned int, 4> palette;
 
 	struct IORegs {
 		unsigned char ly;

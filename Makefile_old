@@ -1,13 +1,11 @@
 #OBJS specifies which files to compile as part of the project
-SOURCES = src/gb.cpp src/gb_cpu.cpp src/gb_gpu.cpp src/gb_mem.cpp src/texture.cpp src/main.cpp
-TEST_SOURCES = src/gb.cpp src/gb_cpu.cpp src/gb_gpu.cpp src/gb_mem.cpp src/texture.cpp src/test_main.cpp
-OBJS=$(SOURCES:.cpp=.o)
-TEST_OBJS=$(TEST_SOURCES:.cpp=.o)
+OBJS = src/gb.cpp src/gb_cpu.cpp src/gb_gpu.cpp src/gb_mem.cpp src/main.cpp src/texture.cpp
+TEST_OBJS = src/gb.cpp src/gb_cpu.cpp src/gb_gpu.cpp src/gb_mem.cpp src/test_main.cpp src/texture.cpp
 
 #CC specifies which compiler we're using
 CC = g++
 
-CFLAGS =-c -std=c++11 -g
+CFLAGS = -std=c++11 -g -O2
 
 #COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings
@@ -17,22 +15,12 @@ COMPILER_FLAGS = $(CFLAGS) $(shell sdl2-config --cflags)
 LINKER_FLAGS = $(shell sdl2-config --libs) -lSDL2_image
 
 #OBJ_NAME specifies the name of our exectuable
-EXEC_NAME = gameboy
+OBJ_NAME = gameboy
 TEST_NAME = gbtest
 
 #This is the target that compiles our executable
-all: gameboy test
-
-gameboy: $(OBJS)
-	$(CC) $(OBJS) $(LINKER_FLAGS) -o bin/$(EXEC_NAME)
+all : $(OBJS) test
+	$(CC) $(OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o bin/$(OBJ_NAME)
 
 test : $(TEST_OBJS)
-	$(CC) $(TEST_OBJS) $(LINKER_FLAGS) -o bin/$(TEST_NAME)
-
-.cpp.o:
-	$(CC) $(COMPILER_FLAGS) $< -o $@
-
-.PHONY: clean
-
-clean:
-	rm -f src/*.o
+	$(CC) $(TEST_OBJS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o bin/$(TEST_NAME)

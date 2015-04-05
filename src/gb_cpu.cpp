@@ -1394,12 +1394,12 @@ void GameboyCPU::JP_nc() {
 }
 
 void GameboyCPU::JR() {
-	pc = ((char)pc + (char)mem->readByte(pc++));
+	pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
 }
 
 void GameboyCPU::JR_c() {
 	if((f&0x10) > 0) {
-		pc = ((char)pc + (char)mem->readByte(pc++));
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
 	}
 	else {
 		pc += 1;
@@ -1408,7 +1408,7 @@ void GameboyCPU::JR_c() {
 
 void GameboyCPU::JR_z() {
 	if((f&0x80) > 0) {
-		pc = ((char)pc + (char)mem->readByte(pc++));
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
 	}
 	else {
 		pc += 1;
@@ -1418,7 +1418,7 @@ void GameboyCPU::JR_z() {
 void GameboyCPU::JR_nz() {
 	if((f&0x80) == 0) {
 		char temp = (char)mem->readByte(pc++);
-		pc += temp;
+		pc = (unsigned short)((short)pc + temp);
 	}
 	else {
 		pc += 1;
@@ -1427,7 +1427,7 @@ void GameboyCPU::JR_nz() {
 
 void GameboyCPU::JR_nc() {
 	if(f&0x10 == 0) {
-		pc = ((char)pc + (char)mem->readByte(pc++));
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
 	}
 	else {
 		pc += 1;
@@ -1625,9 +1625,14 @@ void GameboyCPU::RET_nz() {
 
 //Bit Rotations
 void GameboyCPU::RL() {
+	//Opcode to register map
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, 
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
+	//Reset Operations and Half-Carry Flags
+	COF();
+	CHF();
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -1647,12 +1652,14 @@ void GameboyCPU::RL() {
 	temp = temp2;
 	temp |= ((f&0x10)>>4);
 
-	if(temp2&0x0100 > 0) {
+	if((temp2&0x0100) != 0) {
 		SCF();
 	}
 	else {
 		ZCF();
 	}
+
+	temp == 0 ? SZF() : CZF();
 
 	if(reg == NULL) {
 		mem->writeByte(temp, getHL());
@@ -1664,7 +1671,8 @@ void GameboyCPU::RL() {
 
 void GameboyCPU::RLC() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	
 	int regNum = opcode & 0x0F;
@@ -1682,7 +1690,7 @@ void GameboyCPU::RLC() {
 	temp2 = temp;
 	temp2 = temp2 << 1;
 
-	if(temp2&0x0100 > 0) {
+	if((temp2&0x0100) != 0) {
 		SCF();
 	}
 	else {
@@ -1692,17 +1700,21 @@ void GameboyCPU::RLC() {
 	temp = temp2;
 	temp |= ((f&0x10)>>4);
 
+	temp == 0 ? SZF() : CZF();
+
 	if(reg == NULL) {
 		mem->writeByte(temp, getHL());
 	}
 	else {
 		*this.*reg = temp;
 	}	
+
 }
 
 void GameboyCPU::RR() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -1715,7 +1727,7 @@ void GameboyCPU::RR() {
 		temp = *this.*reg;
 	}	
 
-	if(temp&0x01 > 0) {
+	if((temp&0x01) > 0) {
 		temp = temp >> 1;
 		temp |= ((f&0x10)<<3);
 		SCF();
@@ -1725,6 +1737,8 @@ void GameboyCPU::RR() {
 		temp |= ((f&0x10)<<3);
 		ZCF();
 	}
+
+	temp == 0 ? SZF() : CZF();
 
 	if(reg == NULL) {
 		mem->writeByte(temp, getHL());
@@ -1736,7 +1750,8 @@ void GameboyCPU::RR() {
 
 void GameboyCPU::RRC() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -1770,7 +1785,8 @@ void GameboyCPU::RRC() {
 //Bit Shifts
 void GameboyCPU::SLA() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -1800,7 +1816,8 @@ void GameboyCPU::SLA() {
 
 void GameboyCPU::SRA() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -1830,7 +1847,8 @@ void GameboyCPU::SRA() {
 
 void GameboyCPU::SRL() {
 	std::map<int, unsigned char GameboyCPU::*> regMap = 
-		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h}, {5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
+		{{0, &GameboyCPU::b}, {1, &GameboyCPU::c}, {2, &GameboyCPU::d}, {3, &GameboyCPU::e}, {4, &GameboyCPU::h},
+		{5, &GameboyCPU::l}, {6, NULL}, {7, &GameboyCPU::a}};
 
 	int regNum = opcode & 0x0F;
 	unsigned char GameboyCPU::* reg = regMap[regNum];
@@ -2185,5 +2203,6 @@ bool GameboyCPU::execute(int* mClocks) {
 	// if(pc > 0x100) {
 	// 	haltFlag = true;
 	// }
+
 	return result;
 }

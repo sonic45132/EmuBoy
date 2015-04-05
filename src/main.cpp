@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else {
-		if(!gb.loadGame("roms/opus5.gb")) {
+		if(!gb.loadGame("roms/Tetris.gb")) {
 			printf("Failed to load ROM\n");
 			return -3;
 		}
@@ -150,11 +150,6 @@ int main(int argc, char* argv[]) {
 				quit = true;
 			}
 		}
-
-		// if((1000/FPS)>(SDL_GetTicks()-start_t))
-  //   {
-  //       SDL_Delay((1000/FPS)-(SDL_GetTicks()-start_t)); //Yay stable framerate!
-  //   }
 
 		end_time = std::chrono::high_resolution_clock::now();
 		time = end_time - start_time;

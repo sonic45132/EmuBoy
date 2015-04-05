@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else {
-		if(!gb.loadGame("roms/metroid.gb")) {
+		if(!gb.loadGame("roms/opus5.gb")) {
 			printf("Failed to load ROM\n");
 			return -3;
 		}

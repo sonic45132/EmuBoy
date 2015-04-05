@@ -279,6 +279,10 @@ bool GameboyMemory::init(GameboyGPU* gpuPtr, bool debug) {
 }
 
 bool GameboyMemory::loadRom(std::string path) {
+	if(path.empty()) {
+		rom.reserve(1024*32);
+		return true;
+	}
 	std::ifstream roms;
   roms.open(path, std::ios::binary);
   roms.seekg (0, roms.end);

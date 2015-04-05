@@ -93,10 +93,10 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	screen.fill(0);
 	debugFlag = debug;
 
-	palette[3] = color(0,0,0);
-	palette[1] = color(85,85,85);
-	palette[2] = color(170,170,170);
-	palette[0] = color(255,255,255);
+	colors = {{3, color(0,0,0)}, {2, color(85,85,85)}, {1, color(170,170,170)}, {0, color(255,255,255)}};
+	for(int i = 0; i < 4; i++) {
+		palette[i] = colors[i];
+	}
 
 	for(int i = 0; i < tiles.size(); i++) {
 		tiles[i].fill(0);
@@ -202,7 +202,7 @@ void GameboyGPU::updateTiles() {
 
 void* GameboyGPU::getScreen() {
 	for(int i=0; i<160; i++) {
-		screen[i+160*143] = color(0, 206, 209);
+		screen[i+160*143] = color((i * M_PI / 180.0)*255, 0, 255);
 	}
 	return (void*)screen.data();
 }
