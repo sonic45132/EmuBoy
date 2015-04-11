@@ -31,9 +31,7 @@ private:
 	//Ram arrays
 	std::vector<unsigned char>       rom;
 	std::vector<unsigned char>       eram;
-	std::array<unsigned char, 8192>  vram;
 	std::array<unsigned char, 8192>  wram;
-	std::array<unsigned char, 256>   oam;
 	std::array<unsigned char, 128>   zram;
 	std::array<unsigned char, 128>   ioregs;
 

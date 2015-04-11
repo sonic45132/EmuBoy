@@ -34,7 +34,7 @@ public:
 	bool reset();
 	bool loadGame(std::string path);
 	bool emulateCycle(unsigned long delta);
-	bool getKeys(std::array<char, 8> keys);
+	bool getKeys(std::array<bool, 8> keys);
 
 };
 

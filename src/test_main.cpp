@@ -49,7 +49,7 @@ class Debug {
 
 		void dumpRegs() {
 			std::ofstream dump;
-			dump.open("dumps/regs.bin");
+			dump.open("dumps/regs.bin", std::ios::binary);
 			for(int i=0;i<gpu->regs.size();i++) {
 				dump << gpu->regs[i];
 			}
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-  if(!gb.initialize(true, gTexture)) {
+  if(!gb.initialize(false, gTexture)) {
 		printf("Gameboy failed to initialize.\n");
 		return -2;
 	}

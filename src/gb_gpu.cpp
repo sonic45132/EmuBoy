@@ -4,6 +4,8 @@
 #include <time.h>
 #include <math.h>
 
+#define GREY 75
+
 unsigned char GameboyGPU::readByte(unsigned short addr) {
 	switch(addr & 0xF000) {
 		case 0x8000:
@@ -16,7 +18,7 @@ unsigned char GameboyGPU::readByte(unsigned short addr) {
 			else {
 				switch(addr & 0x000F) {
 					case 0x1:
-						return ioReg.mode;
+						return mode;
 					case 0x2:
 						return ioReg.yscrl;
 					case 0x3:
@@ -26,7 +28,7 @@ unsigned char GameboyGPU::readByte(unsigned short addr) {
 					case 0x5:
 						return ioReg.lyc;
 					default:
-						return regs[addr&0x01FF];
+						return regs.at(addr&0x000F);
 				}
 			}
 	}
@@ -45,7 +47,7 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 				oam[addr & 0xFF] = data;
 			}
 			else {
-				regs[addr&0xFF] = data;
+				regs.at(addr&0x000F) = data;
 				switch(addr & 0x000F) {
 					case 0x0:
 						ioReg.lcdOn = (data&0x80) ? true : false;
@@ -67,6 +69,9 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 					case 0x5:
 						ioReg.lyc = data;
 						break;
+					case 0x7:
+            updatePalette();
+						break;
 				}
 			}
 	}
@@ -86,16 +91,15 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	ioReg.lcdOn = false;
 	ioReg.bgOn = false;
 	ioReg.objOn = true;
-	ioReg.mode = 2;
+	mode = 2;
 	vram.fill(0);
 	oam.fill(0);
 	regs.fill(0);
 	screen.fill(0);
 	debugFlag = debug;
 
-	colors = {{3, color(0,0,0)}, {2, color(85,85,85)}, {1, color(170,170,170)}, {0, color(255,255,255)}};
 	for(int i = 0; i < 4; i++) {
-		palette[i] = colors[i];
+        palette.at(i) = color(255-(GREY*i), 255-(GREY*i), 255-(GREY*i));
 	}
 
 	for(int i = 0; i < tiles.size(); i++) {
@@ -108,18 +112,18 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	clocks += mClocks;
 	
-	switch(ioReg.mode) {
+	switch(mode) {
 		case 0:
 			//printf("GPU Mode 0.\n");
 			if(clocks >= 51) {
 				//printf("Clocks >= 51.\n");
 				if(ioReg.ly == 143) {
 					//printf("Draw.\n");
-					ioReg.mode = 1;
+					mode = 1;
 					*drawFlag = true;
 				}
 				else {
-					ioReg.mode = 2;
+					mode = 2;
 				}
 				ioReg.ly++;
 				clocks = 0;
@@ -132,7 +136,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 				ioReg.ly++;
 				if(ioReg.ly > 153) {
 					ioReg.ly = 0;
-					ioReg.mode = 2;
+					mode = 2;
 				}
 			}
 			break;
@@ -140,12 +144,12 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 		case 2:
 			if(clocks >= 20) {
 				clocks = 0;
-				ioReg.mode = 3;
+				mode = 3;
 			}
 			break;
 
 		case 3:
-			ioReg.mode = 0;
+			mode = 0;
 			renderScanline();
 			break;
 	};
@@ -198,6 +202,14 @@ void GameboyGPU::updateTiles() {
 			}
 		}
 	}
+}
+
+void GameboyGPU::updatePalette() {
+	unsigned char data = regs[0x7];
+     for(int i = 0; i < 4; i++) {
+        unsigned char temp = ((data & (0x3 << (2 * i))) >> 2*i);
+        palette.at(i) = color(255-(GREY*temp), 255-(GREY*temp), 255-(GREY*temp));
+     }
 }
 
 void* GameboyGPU::getScreen() {

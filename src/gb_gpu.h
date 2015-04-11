@@ -14,16 +14,16 @@ private:
 	bool debugFlag;
 
 	int clocks;
-	int mode;
+	unsigned char mode;
 
 	std::array<unsigned char, 8192>  vram;
 	std::array<unsigned char, 256>   oam;
-	std::array<unsigned char, 64>    regs;
+	std::array<unsigned char, 16>    regs;
 
 	std::array<unsigned int, 92160> screen;
 	std::array<std::array<unsigned char, 64>, 384> tiles;
 
-	std::map<unsigned char, unsigned int> colors;
+	//std::map<unsigned char, unsigned int> colors;
 	std::array<unsigned int, 4> palette;
 
 	struct IORegs {
@@ -37,12 +37,13 @@ private:
 		bool lcdOn;
 		bool bgOn;
 		bool objOn;
-		unsigned char mode;
+		unsigned char bgp;
 	};
 	IORegs ioReg;
 
 	void renderScanline();
 	void updateTiles();
+	void updatePalette();
 	unsigned int color(unsigned char r, unsigned char g, unsigned char b);
 
 public:

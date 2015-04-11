@@ -2191,7 +2191,7 @@ bool GameboyCPU::execute(int* mClocks) {
 			pc = 0x100;
 		}
 		opcode = mem->readByte(pc++);
-		//printf("%02X\n", opcode);
+		
 		(*this.*opMap[(opcode&0xF0)>>4][opcode&0x0F])();
 		*mClocks = 2; //mTime;
 
@@ -2200,9 +2200,9 @@ bool GameboyCPU::execute(int* mClocks) {
 		}
 	}
 
-	// if(pc > 0x100) {
-	// 	haltFlag = true;
-	// }
+	if(pc >= 0x100) {
+		haltFlag = true;
+	}
 
 	return result;
 }
