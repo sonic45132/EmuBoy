@@ -45,6 +45,7 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 		case 0xF000:
 			if(addr & 0x0F00 == 0x0E00) {
 				oam[addr & 0xFF] = data;
+				updateSprites();
 			}
 			else {
 				regs.at(addr&0x000F) = data;
@@ -139,6 +140,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 					mode = 2;
 				}
 			}
+			mem->interrupts.vblank = true;
 			break;
 
 		case 2:
@@ -201,6 +203,20 @@ void GameboyGPU::updateTiles() {
 				tiles[i][(j * 8) + k] = (upperBit * 2) + lowerBit;
 			}
 		}
+	}
+}
+
+void GameboyGPU::updateSprites() {
+	for(int i = 0; i < 40; i++) {
+		SPRITE_DATA temp;
+		temp.y = oam[0+(i*4)] - 16;
+		temp.x = oam[1+(i*4)] - 8;
+		temp.tile = oam[2+(i*4)];
+		temp.flippedX = ((oam[3+(i*4)] & 0x20) != 0) ? true: false;
+		temp.flippedY = ((oam[3+(i*4)] & 0x40) != 0) ? true: false;
+		temp.palette = ((oam[3+(i*4)] & 0x10) != 0) ? true: false;
+		temp.below = ((oam[3+(i*4)] & 0x80) != 0) ? true: false;
+		sprites[i] = temp;
 	}
 }
 

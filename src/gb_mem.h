@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 
+class GameboyGPU;
 class GameboyMemory {
 
 private:
@@ -45,6 +46,8 @@ private:
 	enum RamType {BIOS, ROM, VRAM, ERAM, WRAM, OAM, ZRAM, IOREGS};
 
 	void dumpRam(RamType type);
+	unsigned char getReg(unsigned short reg);
+	void setReg(unsigned short reg, unsigned char data);
 
 	GameboyGPU* gpu;
 
@@ -58,6 +61,8 @@ public:
 		unsigned char mode;
 	};
 	interruptFlags interrupts;
+
+	std::array<bool, 8> keyStates;
 
 
 	bool init(GameboyGPU* gpuPtr, bool debug);

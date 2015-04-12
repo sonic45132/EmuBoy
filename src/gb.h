@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <unordered_map>
 
 #include "gb_mem.h"
 #include "gb_cpu.h"
@@ -29,6 +30,17 @@ public:
 	~Gameboy();
 
 	bool drawFlag;
+
+	enum GB_KEYS {
+		GB_A = 0,
+		GB_B,
+		GB_SELECT,
+		GB_START,
+		GB_RIGHT,
+		GB_LEFT,
+		GB_UP,
+		GB_DOWN	
+	};
 
 	bool initialize(bool debug = false, Texture* texture = NULL);
 	bool reset();

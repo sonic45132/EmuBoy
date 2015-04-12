@@ -68,7 +68,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 							return  gpu->readByte(addr); 
 						}
 						else { 
-							return ioregs[addr&0x00FF];
+							return getReg(addr&0x00FF);
 						}
 					}
 					else {
@@ -142,7 +142,7 @@ bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 							gpu->writeByte(data, addr); 
 						}
 						else { 
-							ioregs[addr&0x00FF] = data; 
+							setReg(addr, data);
 						}
 						// dumpRam(IOREGS);
 					}
@@ -183,6 +183,28 @@ bool GameboyMemory::writeWord(unsigned short data, unsigned short addr) {
 		}
 	}
 	return true;
+}
+
+void GameboyMemory::setReg(unsigned short reg, unsigned char data) {
+	ioregs[reg] = data;
+}
+
+unsigned char GameboyMemory::getReg(unsigned short reg) {
+	unsigned char low = 0;
+	unsigned char temp = 0;
+	unsigned char bank = 0;
+	switch(reg) {
+		case 0: 
+			bank = ((ioregs[reg] & 0x30) >> 4) - 1;
+			bank = 1 - bank;
+			for(int i = 0; i < 4; i++) {
+				temp = (keyStates[i+(bank*4)] ? 0 : 1) << i;
+				low |= temp;
+			}
+			return (bank << 4) | temp;
+		default:
+			return ioregs[reg];
+	}
 }
 
 void GameboyMemory::dumpRam(RamType type) {

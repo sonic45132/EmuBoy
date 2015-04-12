@@ -35,6 +35,12 @@ bool Gameboy::loadGame(std::string path) {
 	return mem->loadRom(path);
 }
 
+bool Gameboy::getKeys(std::array<bool, 8> keys) {
+	mem->keyStates = keys;
+	mem->interrupts.input = true;
+	return true;
+}
+
 bool Gameboy::emulateCycle(unsigned long delta) {
 	bool result = true;
 	int mClocks = 0;

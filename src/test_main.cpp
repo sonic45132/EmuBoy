@@ -5,6 +5,10 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <typeinfo>
+#include <exception>
+#include <string>
+#include <unordered_map>
 
 class Debug {
 	public:
@@ -156,6 +160,12 @@ void close() {
 int main(int argc, char* argv[]) {
 
 	auto start_time = std::chrono::high_resolution_clock::now();
+	std::unordered_map<SDL_Keycode ,Gameboy::GB_KEYS> keyMap;
+	keyMap = {{SDLK_z, Gameboy::GB_A}, {SDLK_x, Gameboy::GB_B}, {SDLK_UP, Gameboy::GB_UP}, {SDLK_DOWN, Gameboy::GB_DOWN}, 
+		{SDLK_LEFT, Gameboy::GB_LEFT}, {SDLK_RIGHT, Gameboy::GB_RIGHT}, {SDLK_RETURN, Gameboy::GB_START}, {SDLK_RSHIFT, Gameboy::GB_SELECT}};
+
+	std::array<bool, 8> keyStates;
+	keyStates = {false, false, false, false, false, false, false, false};
 
 	if(!init()) {
 		printf( "SDL failed to initialize.\n" );
@@ -216,39 +226,58 @@ int main(int argc, char* argv[]) {
 		}
 		
 		while(SDL_PollEvent(&e) != 0) {
-			if(e.type == SDL_QUIT) {
-				quit = true;
-			}
-			else if(e.type == SDL_KEYDOWN ) {
-				switch(e.key.keysym.sym) {
-					case SDLK_p:
-						pause = !pause;
-						break;
-					case SDLK_h:
-						dbg.dumpVRAM();
-						break;
-					case SDLK_j:
-						dbg.dumpOAM();
-						break;
-					case SDLK_k:
-						dbg.dumpScreen();
-						break;
-					case SDLK_l:
-						dbg.dumpRegs();
-						break;
-					case SDLK_t:
-						dbg.dumpTiles();
-						break;
-					case SDLK_n:
-						step = true;
-						break;
-				}
+			switch(e.type) {
+				case SDL_QUIT:
+					quit = true;
+					break;
+				case SDL_KEYDOWN:
+					try {
+						Gameboy::GB_KEYS key = keyMap.at(e.key.keysym.sym);
+						keyStates.at(key) = true;
+					}
+					catch(std::exception& e) {
+						printf("%s\n", e.what());
+					}
+					switch(e.key.keysym.sym) {
+						case SDLK_p:
+							pause = !pause;
+							break;
+						case SDLK_h:
+							dbg.dumpVRAM();
+							break;
+						case SDLK_j:
+							dbg.dumpOAM();
+							break;
+						case SDLK_k:
+							dbg.dumpScreen();
+							break;
+						case SDLK_l:
+							dbg.dumpRegs();
+							break;
+						case SDLK_t:
+							dbg.dumpTiles();
+							break;
+						case SDLK_n:
+							step = true;
+							break;
+					}
+					break;
+				case SDL_KEYUP:
+					try {
+						Gameboy::GB_KEYS key = keyMap.at(e.key.keysym.sym);
+						keyStates.at(key) = false;
+					}
+					catch(std::exception& e) {
+						printf("%s\n", e.what());
+					}
+					break;
 			}
 		}
+		gb.getKeys(keyStates);
 
 		if(pause)
     {
-      SDL_Delay(16); //Yay stable framerate!
+      SDL_Delay(32); //Yay stable framerate!
     }
 
 		end_time = std::chrono::high_resolution_clock::now();

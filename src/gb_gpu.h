@@ -3,8 +3,9 @@
 
 #include <array>
 #include <map>
+#include "gb_mem.h"
 
-class GameboyMemory;
+//class GameboyMemory;
 class GameboyGPU {
 
 private:
@@ -41,8 +42,20 @@ private:
 	};
 	IORegs ioReg;
 
+	struct SPRITE_DATA {
+		short x;
+		short y;
+		unsigned char tile;
+		bool flippedX;
+		bool flippedY;
+		bool palette;
+		bool below;
+	};
+	std::array<SPRITE_DATA, 40> sprites;
+
 	void renderScanline();
 	void updateTiles();
+	void updateSprites();
 	void updatePalette();
 	unsigned int color(unsigned char r, unsigned char g, unsigned char b);
 
