@@ -7,3 +7,7 @@ bin/[0-9a-zA-Z]*
 *.gb
 *log*
 *.o
+*.creator*
+*.files
+*.includes
+*.config
