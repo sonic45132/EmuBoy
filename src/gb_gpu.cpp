@@ -12,7 +12,7 @@ unsigned char GameboyGPU::readByte(unsigned short addr) {
 		case 0x9000:
 			return vram[addr & 0x1FFF];
 		case 0xF000:
-			if(addr & 0x0F00 == 0x0E00) {
+			if((addr & 0x0F00) == 0x0E00) {
 				return oam[addr & 0x00FF];
 			}
 			else {
@@ -31,6 +31,8 @@ unsigned char GameboyGPU::readByte(unsigned short addr) {
 						return regs.at(addr&0x000F);
 				}
 			}
+		default:
+			return (unsigned char)0xDEAD;
 	}
 }
 
@@ -43,7 +45,7 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 			updateTiles();
 			break;
 		case 0xF000:
-			if(addr & 0x0F00 == 0x0E00) {
+			if((addr & 0x0F00) == 0x0E00) {
 				oam[addr & 0xFF] = data;
 				updateSprites();
 			}
@@ -159,8 +161,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	return true;
 }
 
-void GameboyGPU::renderScanline() {
-	//TODO: Render scanlinee
+void GameboyGPU::renderBackground(std::array<unsigned char, 160>& scanline) {
 	unsigned short mapBase = ioReg.bgMapBase;
 	mapBase += (((ioReg.ly + ioReg.yscrl) & 255) >> 3)*32; 
 
@@ -171,11 +172,9 @@ void GameboyGPU::renderScanline() {
 	unsigned char x = ioReg.xscrl & 7;
 	unsigned char y = (ioReg.ly + ioReg.yscrl) & 7;
 
-	int screenOffset = ioReg.ly * 160; 
-
 	for(int i = 0; i < 160; i++) {
 
-		screen[screenOffset + i] = palette[tiles[tile][(y * 8) + x]];
+		scanline.at(i) = tiles[tile][(y * 8) + x];
 
 		x++;
 		if(x == 8) {
@@ -183,6 +182,22 @@ void GameboyGPU::renderScanline() {
 			lineOffset = (lineOffset + 1) & 31;
 			tile = vram[mapBase + lineOffset];
 		}
+	}
+}
+
+void GameboyGPU::renderSprites(std::array<unsigned char, 160>& scanline) {
+
+}
+
+void GameboyGPU::renderScanline() {
+	std::array<unsigned char, 160> scanline;
+	renderBackground(scanline);
+//	renderSprites(scanline);
+
+	int screenOffset = ioReg.ly * 160;
+
+	for(int i = 0; i < scanline.size(); i++) {
+		screen[screenOffset + i] = palette[scanline[i]];
 	}
 }
 

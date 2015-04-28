@@ -17,6 +17,7 @@ class Debug {
 		bool init(Gameboy* gameboy) {
 			gb = gameboy;
 			gpu = gb->gpu;
+			return true;
 		}
 
 		void dumpVRAM() {

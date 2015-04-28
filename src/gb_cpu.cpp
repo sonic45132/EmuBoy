@@ -1358,7 +1358,7 @@ void GameboyCPU::JP_hl() {
 }
 
 void GameboyCPU::JP_c() {
-	if(f&0x10 > 0) {
+	if((f&0x10) > 0) {
 		pc = mem->readWord(pc);
 	}
 	else {
@@ -1367,7 +1367,7 @@ void GameboyCPU::JP_c() {
 }
 
 void GameboyCPU::JP_z() {
-	if(f&0x80 > 0) {
+	if((f&0x80) > 0) {
 		pc = mem->readWord(pc);
 	}
 	else {
@@ -1376,7 +1376,7 @@ void GameboyCPU::JP_z() {
 }
 
 void GameboyCPU::JP_nz() {
-	if(f&0x80 == 0) {
+	if((f&0x80) == 0) {
 		pc = mem->readWord(pc);
 	}
 	else {
@@ -1385,7 +1385,7 @@ void GameboyCPU::JP_nz() {
 }
 
 void GameboyCPU::JP_nc() {
-	if(f&0x10 == 0) {
+	if((f&0x10) == 0) {
 		pc = mem->readWord(pc);
 	}
 	else {
@@ -1394,12 +1394,12 @@ void GameboyCPU::JP_nc() {
 }
 
 void GameboyCPU::JR() {
-	pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
+	pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
 }
 
 void GameboyCPU::JR_c() {
 	if((f&0x10) > 0) {
-		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
 	}
 	else {
 		pc += 1;
@@ -1408,7 +1408,7 @@ void GameboyCPU::JR_c() {
 
 void GameboyCPU::JR_z() {
 	if((f&0x80) > 0) {
-		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
 	}
 	else {
 		pc += 1;
@@ -1426,8 +1426,8 @@ void GameboyCPU::JR_nz() {
 }
 
 void GameboyCPU::JR_nc() {
-	if(f&0x10 == 0) {
-		pc = (unsigned short)((short)pc + (char)mem->readByte(pc++));
+	if((f&0x10) == 0) {
+		pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
 	}
 	else {
 		pc += 1;
@@ -1764,7 +1764,7 @@ void GameboyCPU::RRC() {
 		temp = *this.*reg;
 	}
 
-	if(temp&0x01 > 0) {
+	if((temp&0x01) > 0) {
 		SCF();
 	}
 	else {
@@ -1799,7 +1799,7 @@ void GameboyCPU::SLA() {
 		temp = *this.*reg;
 	}
 
-	(temp & 0x80 > 0) ? SCF() : ZCF();
+	((temp & 0x80) > 0) ? SCF() : ZCF();
 
 	temp = temp << 1;
 
@@ -1830,7 +1830,7 @@ void GameboyCPU::SRA() {
 		temp = (char)(*this.*reg);
 	}
 
-	(temp & 0x01 > 0) ? SCF() : ZCF();
+	((temp & 0x01) > 0) ? SCF() : ZCF();
 
 	temp = temp >> 1;
 
@@ -1861,7 +1861,7 @@ void GameboyCPU::SRL() {
 		temp = *this.*reg;
 	}
 
-	(temp & 0x01 > 0) ? SCF() : ZCF();
+	((temp & 0x01) > 0) ? SCF() : ZCF();
 
 	temp = temp >> 1;
 	temp &= ~(0x80);
@@ -2109,6 +2109,7 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 
 	mem = memory;
 	mem->setBios(biosFlag);
+	return true;
 }
 
 void GameboyCPU::EXT() {
@@ -2195,7 +2196,8 @@ bool GameboyCPU::execute(int* mClocks) {
 		for(int i = 0; i < mem->interrupts.size(); i++) {
 			if(mem->interrupts[i]) {
 				if(mem->intEnFlags[i]) {
-					//Jump and run interupt routine. Keep list of addess and use i to index into it.
+					pc = isr[i];
+					break;
 				}
 			}
 		}

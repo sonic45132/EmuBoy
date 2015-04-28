@@ -14,6 +14,8 @@ private:
 
 	GameboyMemory* mem;
 
+	unsigned short isr[5] = {0x40, 0x48, 0x50, 0x58, 0x60};
+
 	unsigned int cycle_num;
 
 	bool biosFlag;

@@ -53,6 +53,8 @@ private:
 	};
 	std::array<SPRITE_DATA, 40> sprites;
 
+	void renderBackground(std::array<unsigned char, 160>& scanline);
+	void renderSprites(std::array<unsigned char, 160>& scanline);
 	void renderScanline();
 	void updateTiles();
 	void updateSprites();

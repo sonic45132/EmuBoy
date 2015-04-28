@@ -86,6 +86,9 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 				default:
 					return wram[addr&0x1FFF];
 			}
+		default:
+			printf("Default in mem read\n");
+			return (unsigned char)0xDEAD;
 	}
 }
 
