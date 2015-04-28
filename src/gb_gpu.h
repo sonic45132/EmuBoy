@@ -5,7 +5,7 @@
 #include <map>
 #include "gb_mem.h"
 
-//class GameboyMemory;
+class GameboyMemory;
 class GameboyGPU {
 
 private:

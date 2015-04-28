@@ -6,9 +6,9 @@
 #include <array>
 #include <unordered_map>
 
+#include "gb_gpu.h"
 #include "gb_mem.h"
 #include "gb_cpu.h"
-#include "gb_gpu.h"
 #include "texture.h"
 
 class Gameboy {

@@ -36,8 +36,10 @@ bool Gameboy::loadGame(std::string path) {
 }
 
 bool Gameboy::getKeys(std::array<bool, 8> keys) {
+	if(keys != mem->keyStates) {
+		mem->interrupts[4] = true;
+	}
 	mem->keyStates = keys;
-	mem->interrupts.input = true;
 	return true;
 }
 

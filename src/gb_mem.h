@@ -43,7 +43,7 @@ private:
 	struct memAccess { bool write; unsigned short addr; unsigned short data; };
 	std::vector<memAccess> accessList;
 
-	enum RamType {BIOS, ROM, VRAM, ERAM, WRAM, OAM, ZRAM, IOREGS};
+	enum RamType {BIOS, ROM, ERAM, WRAM, ZRAM, IOREGS};
 
 	void dumpRam(RamType type);
 	unsigned char getReg(unsigned short reg);
@@ -52,15 +52,9 @@ private:
 	GameboyGPU* gpu;
 
 public:
-	struct interruptFlags {
-		bool vblank;
-		bool lcdc;
-		bool timer;
-		bool serial;
-		bool input;
-		unsigned char mode;
-	};
-	interruptFlags interrupts;
+	
+	std::array<bool, 5> intEnFlags;
+	std::array<bool, 5> interrupts;
 
 	std::array<bool, 8> keyStates;
 

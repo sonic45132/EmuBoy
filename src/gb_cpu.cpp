@@ -2190,6 +2190,16 @@ bool GameboyCPU::execute(int* mClocks) {
 			mem->setBios(biosFlag);
 			pc = 0x100;
 		}
+
+		//Check for last cycles interrupts
+		for(int i = 0; i < mem->interrupts.size(); i++) {
+			if(mem->interrupts[i]) {
+				if(mem->intEnFlags[i]) {
+					//Jump and run interupt routine. Keep list of addess and use i to index into it.
+				}
+			}
+		}
+
 		opcode = mem->readByte(pc++);
 		
 		(*this.*opMap[(opcode&0xF0)>>4][opcode&0x0F])();

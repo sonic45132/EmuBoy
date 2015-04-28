@@ -140,7 +140,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 					mode = 2;
 				}
 			}
-			mem->interrupts.vblank = true;
+			mem->interrupts[0] = true;
 			break;
 
 		case 2:

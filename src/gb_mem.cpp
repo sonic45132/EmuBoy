@@ -52,6 +52,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 		case 0xF000:
 			switch(addr&0xF00) {
 				case 0xE00:
+					//OAM
 					if(addr < 0xFEA0) {
 						return gpu->readByte(addr); 
 					}
@@ -64,20 +65,22 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 						return zram[addr&0x7F]; 
 					} 
 					else if(addr <= 0xFF7F){ 
+						//GPU Regs
 						if(addr >= 0xFF40) { 
 							return  gpu->readByte(addr); 
 						}
 						else { 
+							//IO Regs
 							return getReg(addr&0x00FF);
 						}
 					}
 					else {
 						return (
-							(interrupts.vblank) ? 0x1 : 0x0 |
-							(interrupts.lcdc) ? 0x2 : 0x0 |
-							(interrupts.timer) ? 0x4 : 0x0 |
-							(interrupts.serial) ? 0x8 : 0x0 |
-							(interrupts.input) ? 0x10 : 0x0
+							(intEnFlags[0]) ? 0x1 : 0x0 |
+							(intEnFlags[1]) ? 0x2 : 0x0 |
+							(intEnFlags[2]) ? 0x4 : 0x0 |
+							(intEnFlags[3]) ? 0x8 : 0x0 |
+							(intEnFlags[4]) ? 0x10 : 0x0
 							);
 					}
 				default:
@@ -147,11 +150,11 @@ bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 						// dumpRam(IOREGS);
 					}
 					else {
-						interrupts.vblank = (data&0x1) ? true : false;
-						interrupts.lcdc = (data&0x2) ? true : false;
-						interrupts.timer = (data&0x4) ? true : false;
-						interrupts.serial = (data&0x8) ? true : false;
-						interrupts.input = (data&0x10) ? true : false;
+						intEnFlags[0] = (data&0x1) ? true : false;
+						intEnFlags[1] = (data&0x2) ? true : false;
+						intEnFlags[2] = (data&0x4) ? true : false;
+						intEnFlags[3] = (data&0x8) ? true : false;
+						intEnFlags[4] = (data&0x10) ? true : false;
 					}
 					break;
 				default:
@@ -187,6 +190,15 @@ bool GameboyMemory::writeWord(unsigned short data, unsigned short addr) {
 
 void GameboyMemory::setReg(unsigned short reg, unsigned char data) {
 	ioregs[reg] = data;
+	switch(reg) {
+		case 16:
+			interrupts[0] = (data | 0x01) ? true : false;
+			interrupts[1] = (data | 0x02) ? true : false;
+			interrupts[2] = (data | 0x04) ? true : false;
+			interrupts[3] = (data | 0x08) ? true : false;
+			interrupts[4] = (data | 0x010) ? true : false;
+			break;
+	}
 }
 
 unsigned char GameboyMemory::getReg(unsigned short reg) {
@@ -202,6 +214,14 @@ unsigned char GameboyMemory::getReg(unsigned short reg) {
 				low |= temp;
 			}
 			return (bank << 4) | temp;
+		case 16:
+			return (
+				(interrupts[0]) ? 0x1 : 0x0 |
+				(interrupts[1]) ? 0x2 : 0x0 |
+				(interrupts[2]) ? 0x4 : 0x0 |
+				(interrupts[3]) ? 0x8 : 0x0 |
+				(interrupts[4]) ? 0x10 : 0x0
+			);
 		default:
 			return ioregs[reg];
 	}
@@ -276,6 +296,9 @@ bool GameboyMemory::init(GameboyGPU* gpuPtr, bool debug) {
 	wram.fill(0);
 	zram.fill(0);
 	ioregs.fill(0);
+
+	intEnFlags.fill(true);
+	interrupts.fill(false);
 
 	biosFlag = true;
 	debugFlag = debug;
