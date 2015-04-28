@@ -300,7 +300,7 @@ bool GameboyMemory::init(GameboyGPU* gpuPtr, bool debug) {
 	zram.fill(0);
 	ioregs.fill(0);
 
-	intEnFlags.fill(true);
+	intEnFlags.fill(false);
 	interrupts.fill(false);
 
 	biosFlag = true;

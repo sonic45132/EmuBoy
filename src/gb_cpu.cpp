@@ -2197,6 +2197,7 @@ bool GameboyCPU::execute(int* mClocks) {
 			if(mem->interrupts[i]) {
 				if(mem->intEnFlags[i]) {
 					pc = isr[i];
+					mem->interrupts.fill(false);
 					break;
 				}
 			}
