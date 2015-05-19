@@ -192,7 +192,18 @@ void GameboyGPU::renderBackground(std::array<unsigned char, 160>& scanline) {
 }
 
 void GameboyGPU::renderSprites(std::array<unsigned char, 160>& scanline) {
-
+	for(int i = 0; i < sprites.size(); i++) {
+		SPRITE_DATA sprite = sprites.at(i);
+		if((sprite.y - 16) <= ioReg.ly && sprite.y >= ioReg.ly) {
+			if((sprite.x) > 0 && (sprite.x - 8) < 160) {
+				int start = ((sprite.x - 8) > 0) ? 0 : abs(sprite.x - 8);
+				int end = (sprite.x < 160) ? 0 : (160 - (sprite.x - 8));
+				for(int j = start; j < end; j++) {
+					scanline.at((sprite.x - 8) + j) = tiles[sprite.tile][((ioReg.ly - (sprite.y - 16)) * 8) + j];
+				}
+			}
+		}
+	}
 }
 
 void GameboyGPU::renderScanline() {
