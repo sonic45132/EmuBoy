@@ -93,7 +93,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 }
 
 bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
-	//if(debugFlag) { accessList.push_back({true, addr, data}); }
+	if(debugFlag) { accessList.push_back({true, addr, data}); }
 	switch(addr & 0xF000) {
 		//BIOS AND ROM
 		case 0x0000:

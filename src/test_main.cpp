@@ -7,6 +7,7 @@
 #include <fstream>
 #include <typeinfo>
 #include <exception>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -34,6 +35,19 @@ class Debug {
 			dump.open("dumps/oam.bin", std::ios::binary);
 			for(int i=0;i<gpu->oam.size();i++) {
 				dump << gpu->oam[i];
+			}
+			dump.close();
+		}
+
+		void dumpTileMap() {
+			std::ofstream dump;
+			dump.open("dumps/tilemap.txt");
+			for(int i=0;i<1024;i++) {
+				if(i != 0 && i%32 == 0) {
+					dump << "\n";
+				}
+				printf("map at %X\n", (6143 + i));
+				dump << std::to_string(gpu->vram.at(6143 + i)) << " ";
 			}
 			dump.close();
 		}
@@ -205,11 +219,8 @@ int main(int argc, char* argv[]) {
 	bool step = false;
 	SDL_Event e;
 
-	//int FPS = 60;
-
 	while(!quit) {
 		start_time = std::chrono::high_resolution_clock::now();
-		//unsigned int start_t = SDL_GetTicks();
 		
 		if(!pause || step) {
 			if(!gb.emulateCycle(delta)) {
@@ -222,6 +233,7 @@ int main(int argc, char* argv[]) {
 				SDL_RenderClear( gRenderer );
 				gTexture->render(0,0);
 				SDL_RenderPresent( gRenderer );
+				SDL_Delay(5);
 			}
 			step = false;
 		}
@@ -259,7 +271,7 @@ int main(int argc, char* argv[]) {
 							dbg.dumpTiles();
 							break;
 						case SDLK_n:
-							step = true;
+							dbg.dumpTileMap();
 							break;
 					}
 					break;
@@ -278,7 +290,7 @@ int main(int argc, char* argv[]) {
 
 		if(pause)
     {
-      SDL_Delay(32); //Yay stable framerate!
+      SDL_Delay(50); //Yay stable framerate!
     }
 
 		end_time = std::chrono::high_resolution_clock::now();

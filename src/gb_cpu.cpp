@@ -1394,7 +1394,8 @@ void GameboyCPU::JP_nc() {
 }
 
 void GameboyCPU::JR() {
-	pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
+	char temp = (char)mem->readByte(pc++);
+	pc = (unsigned short)((short)pc + temp);
 }
 
 void GameboyCPU::JR_c() {
@@ -2214,7 +2215,7 @@ bool GameboyCPU::execute(int* mClocks) {
 	}
 
 	if(pc >= 0x100) {
-		haltFlag = true;
+		//haltFlag = true;
 	}
 
 	return result;

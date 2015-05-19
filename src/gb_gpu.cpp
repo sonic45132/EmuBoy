@@ -104,6 +104,8 @@ bool GameboyGPU::init(GameboyMemory* memory, bool debug) {
 	for(int i = 0; i < 4; i++) {
         palette.at(i) = color(255-(GREY*i), 255-(GREY*i), 255-(GREY*i));
 	}
+	palette.at(4) = color(0,0,255);
+	palette.at(5) = color(255,0,0);
 
 	for(int i = 0; i < tiles.size(); i++) {
 		tiles[i].fill(0);
@@ -163,7 +165,7 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 
 void GameboyGPU::renderBackground(std::array<unsigned char, 160>& scanline) {
 	unsigned short mapBase = ioReg.bgMapBase;
-	mapBase += (((ioReg.ly + ioReg.yscrl) & 255) >> 3)*32; 
+	mapBase += ((((ioReg.ly + ioReg.yscrl) & 255) >> 3)*32); 
 
 	unsigned short lineOffset = (ioReg.xscrl >> 3);
 
@@ -181,6 +183,10 @@ void GameboyGPU::renderBackground(std::array<unsigned char, 160>& scanline) {
 			x = 0;
 			lineOffset = (lineOffset + 1) & 31;
 			tile = vram[mapBase + lineOffset];
+			//scanline.at(i) = 4;
+		}
+		if(y == 7) {
+			//scanline.at(i) = 5;
 		}
 	}
 }
@@ -192,7 +198,7 @@ void GameboyGPU::renderSprites(std::array<unsigned char, 160>& scanline) {
 void GameboyGPU::renderScanline() {
 	std::array<unsigned char, 160> scanline;
 	renderBackground(scanline);
-//	renderSprites(scanline);
+	renderSprites(scanline);
 
 	int screenOffset = ioReg.ly * 160;
 

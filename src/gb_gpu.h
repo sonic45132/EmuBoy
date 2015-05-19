@@ -25,7 +25,7 @@ private:
 	std::array<std::array<unsigned char, 64>, 384> tiles;
 
 	//std::map<unsigned char, unsigned int> colors;
-	std::array<unsigned int, 4> palette;
+	std::array<unsigned int, 6> palette;
 
 	struct IORegs {
 		unsigned char ly;
