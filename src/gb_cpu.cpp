@@ -2116,9 +2116,6 @@ bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
 
 void GameboyCPU::EXT() {
 	opcode = mem->readByte(pc++);
-	if(debugFlag) {
-		printf("EXT Opcode: %X\n", opcode);
-	}
 
 	unsigned char high = 0;
 	if((opcode&0x0F) > 0x07) {

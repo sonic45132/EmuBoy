@@ -332,6 +332,7 @@ bool GameboyMemory::loadRom(std::string path) {
   roms.seekg (0, roms.beg);
 
   char* buffer = new char[length];
+  char* name = new char[16];
 
   roms.read(buffer,length);
   if (!roms) {
@@ -343,5 +344,10 @@ bool GameboyMemory::loadRom(std::string path) {
 
   rom.reserve(length);
   std::copy(buffer, (buffer+length), rom.begin());
+  std::copy((buffer + 0x134), (buffer + 16 + 0x134), name);
+  printf("Game Name: %s\n", name);
+  delete buffer;
+  delete name;
+
   return true;
 }
