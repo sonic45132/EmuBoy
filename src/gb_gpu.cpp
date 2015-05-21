@@ -72,6 +72,9 @@ bool GameboyGPU::writeByte(unsigned char data, unsigned short addr) {
 					case 0x5:
 						ioReg.lyc = data;
 						break;
+					case 0x6:
+						DMA((data * 0x100));
+						break;
 					case 0x7:
             updatePalette();
 						break;
@@ -119,11 +122,8 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	
 	switch(mode) {
 		case 0:
-			//printf("GPU Mode 0.\n");
 			if(clocks >= 51) {
-				//printf("Clocks >= 51.\n");
 				if(ioReg.ly == 143) {
-					//printf("Draw.\n");
 					mode = 1;
 					*drawFlag = true;
 				}
@@ -161,6 +161,13 @@ bool GameboyGPU::tick(int mClocks, bool* drawFlag) {
 	};
 
 	return true;
+}
+
+void GameboyGPU::DMA(unsigned short addr) {
+	printf("DMA.\n");
+	for(int i = 0; i < 40*4; i++) {
+		writeByte(mem->readByte((addr + i)), (0xFE00 + i));
+	}
 }
 
 void GameboyGPU::renderBackground(std::array<unsigned char, 160>& scanline) {
@@ -262,7 +269,7 @@ void GameboyGPU::updatePalette() {
 
 void* GameboyGPU::getScreen() {
 	for(int i=0; i<160; i++) {
-		screen[i+160*143] = color((i * M_PI / 180.0)*255, 0, 255);
+		screen[i+160*143] = color(sin(i * M_PI / 180.0)*255, 0, 255);
 	}
 	return (void*)screen.data();
 }

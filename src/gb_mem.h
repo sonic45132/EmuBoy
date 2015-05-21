@@ -71,6 +71,7 @@ public:
 
 	void setBios(bool bios);
 	void printList();
+	void emptyList();
 
 };
 

@@ -49,7 +49,7 @@ bool Gameboy::emulateCycle(unsigned long delta) {
 	drawFlag = false;
 	
 	if(debugFlag) {
-		printf("%lu microseconds\n\n", delta);
+		//printf("%lu microseconds\n\n", delta);
 	}
 
 	result = cpu->execute(&mClocks);

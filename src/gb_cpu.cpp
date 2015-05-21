@@ -90,13 +90,12 @@ void GameboyCPU::DAA() {
 }
 
 void GameboyCPU::DI() {
-	interruptsFlag = false;
 	mem->writeByte(0, 0xFFFF);
 }
 
 void GameboyCPU::EI() {
-	interruptsFlag = true;
-	mem->writeByte(1, 0xFFFF);
+	mem->interrupts.fill(false);
+	mem->writeByte(0xFF, 0xFFFF);
 }
 
 void GameboyCPU::LDrr_a_b() {
@@ -1589,6 +1588,7 @@ void GameboyCPU::RETI() {
 	pc = mem->readByte(sp);
 	pc |= (mem->readByte(sp+1) << 8);
 	sp += 2;
+	printf("Interrupt over. (hopefully)\n");
 	EI();
 }
 
@@ -2082,6 +2082,7 @@ void GameboyCPU::printDebug() {
 	printf("Flags: \n");
 	printf("BIOS: %d HALT: %d STOP: %d\n", biosFlag, haltFlag, stopFlag);
 	mem->printList();
+	printf("\n");
 }
 
 bool GameboyCPU::init(GameboyMemory* memory, bool debug) {
@@ -2189,6 +2190,8 @@ bool GameboyCPU::execute(int* mClocks) {
 	else {
 		if(biosFlag && (pc >= 0x100)) {
 			biosFlag = false;
+			mem->emptyList();
+			printf("Out of BIOS\n");
 			mem->setBios(biosFlag);
 			pc = 0x100;
 		}
@@ -2197,8 +2200,13 @@ bool GameboyCPU::execute(int* mClocks) {
 		for(int i = 0; i < mem->interrupts.size(); i++) {
 			if(mem->interrupts[i]) {
 				if(mem->intEnFlags[i]) {
+					printf("Interrupt! Num: %d\n", i);
+					mem->writeByte(((pc & 0xFF00) >> 8), sp-1);
+					mem->writeByte((pc & 0xFF), sp-2);
+					sp -= 2;
 					pc = isr[i];
 					mem->interrupts.fill(false);
+					DI();
 					break;
 				}
 			}
@@ -2209,13 +2217,9 @@ bool GameboyCPU::execute(int* mClocks) {
 		(*this.*opMap[(opcode&0xF0)>>4][opcode&0x0F])();
 		*mClocks = 2; //mTime;
 
-		if(debugFlag) {
+		if(debugFlag && biosFlag == false) {
 			printDebug();
 		}
-	}
-
-	if(pc >= 0x100) {
-		//haltFlag = true;
 	}
 
 	return result;

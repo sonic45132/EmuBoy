@@ -44,9 +44,11 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 		//WORKING RAM
 		case 0xC000:
 		case 0xD000:
+			if(debugFlag) { accessList.push_back({false, addr, wram[addr&0x1FFF]}); }
 			return wram[addr&0x1FFF];
 		//RAM SHADOW
 		case 0xE000:
+			if(debugFlag) { accessList.push_back({false, addr, wram[addr&0x1FFF]}); }
 			return wram[addr&0x1FFF];
 		//RAM SHADOW/IO/ZERO PAGE
 		case 0xF000:
@@ -54,7 +56,9 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 				case 0xE00:
 					//OAM
 					if(addr < 0xFEA0) {
-						return gpu->readByte(addr); 
+						unsigned char tmp = gpu->readByte(addr);
+						if(debugFlag) { accessList.push_back({false, addr, tmp}); }
+						return tmp; 
 					}
 					else {
 						return 0;
@@ -67,10 +71,13 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 					else if(addr <= 0xFF7F){ 
 						//GPU Regs
 						if(addr >= 0xFF40) { 
-							return  gpu->readByte(addr); 
+							unsigned char tmp = gpu->readByte(addr);
+							if(debugFlag) { accessList.push_back({false, addr, tmp}); }
+							return tmp; 
 						}
 						else { 
 							//IO Regs
+							if(debugFlag) { accessList.push_back({false, addr, getReg(addr&0x00FF)}); }
 							return getReg(addr&0x00FF);
 						}
 					}
@@ -139,7 +146,7 @@ bool GameboyMemory::writeByte(unsigned char data, unsigned short addr) {
 					}
 					break;
 				case 0xF00:
-					if(addr >= 0xFF80) { 
+					if(addr >= 0xFF80 && addr < 0xFFFF) { 
 						zram[addr&0x7F] = data; 
 						// dumpRam(ZRAM);
 					} 
@@ -174,7 +181,7 @@ unsigned short GameboyMemory::readWord(unsigned short addr) {
 	unsigned short temp = 0;
 	temp = readByte(addr);
 	temp |= (readByte(addr+1) << 8);
-	if(debugFlag) { accessList.push_back({false, addr, temp}); }
+	//if(debugFlag) { accessList.push_back({false, addr, temp}); }
 	return temp;
 }
 
@@ -284,6 +291,10 @@ void GameboyMemory::printList() {
 			printf("Read 0x%02X from 0x%04X\n", accessList[i].data, accessList[i].addr);
 		}
 	}
+	accessList.clear();
+}
+
+void GameboyMemory::emptyList() {
 	accessList.clear();
 }
 

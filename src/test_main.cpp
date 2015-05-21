@@ -187,7 +187,7 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
-  if(!gb.initialize(false, gTexture)) {
+  if(!gb.initialize(true, gTexture)) {
 		printf("Gameboy failed to initialize.\n");
 		return -2;
 	}

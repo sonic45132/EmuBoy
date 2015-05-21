@@ -60,6 +60,7 @@ private:
 	void updateSprites();
 	void updatePalette();
 	unsigned int color(unsigned char r, unsigned char g, unsigned char b);
+	void DMA(unsigned short addr);
 
 public:
 	bool init(GameboyMemory* memory, bool debug);
