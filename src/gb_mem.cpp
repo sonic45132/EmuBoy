@@ -44,7 +44,7 @@ unsigned char GameboyMemory::readByte(unsigned short addr) {
 		//WORKING RAM
 		case 0xC000:
 		case 0xD000:
-			if(debugFlag) { accessList.push_back({false, addr, wram[addr&0x1FFF]}); }
+			if(debugFlag && (addr < 0xC000 || addr > 0xC09F )) { accessList.push_back({false, addr, wram[addr&0x1FFF]}); }
 			return wram[addr&0x1FFF];
 		//RAM SHADOW
 		case 0xE000:

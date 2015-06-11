@@ -1399,7 +1399,8 @@ void GameboyCPU::JR() {
 
 void GameboyCPU::JR_c() {
 	if((f&0x10) > 0) {
-		pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
+		char temp = (char)mem->readByte(pc++);
+		pc = (unsigned short)((short)pc + temp);
 	}
 	else {
 		pc += 1;
@@ -1408,7 +1409,8 @@ void GameboyCPU::JR_c() {
 
 void GameboyCPU::JR_z() {
 	if((f&0x80) > 0) {
-		pc = (unsigned short)((short)pc + (char)mem->readByte(pc));
+		char temp = (char)mem->readByte(pc++);
+		pc = (unsigned short)((short)pc + temp);
 	}
 	else {
 		pc += 1;
